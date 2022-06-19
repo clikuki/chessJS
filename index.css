@@ -1,10 +1,14 @@
 :root {
 	--dark-tile-clr: hsl(30, 100%, 85%);
 	--light-tile-clr: hsl(20, 100%, 10%);
-	--tile-size: 4.5rem;
+	--tile-size: 4.5rem; /* default value, will be overridden in js  */
+}
+body {
+	margin: 0;
 }
 .grid {
 	display: grid;
+	width: fit-content;
 	grid-template-columns: repeat(8, var(--tile-size));
 	grid-template-rows: repeat(8, var(--tile-size));
 }
@@ -20,4 +24,13 @@
 }
 .imagePreloading {
 	display: none;
+}
+img {
+	pointer-events: none;
+	user-select: none;
+}
+.dragging {
+	position: absolute;
+	left: calc(var(--x, 0) - (var(--tile-size) / 2));
+	top: calc(var(--y, 0) - (var(--tile-size) / 2));
 }

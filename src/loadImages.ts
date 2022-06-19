@@ -1,4 +1,4 @@
-interface ImagesContainer {
+export interface ImagesContainer {
 	kl: string;
 	kd: string;
 	ql: string;
@@ -12,7 +12,7 @@ interface ImagesContainer {
 	pl: string;
 	pd: string;
 }
-let images = {} as ImagesContainer;
+const images = {} as ImagesContainer;
 let hasBeenLoaded = false;
 export function loadImages() {
 	if (hasBeenLoaded) return images;

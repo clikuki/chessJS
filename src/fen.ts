@@ -1,7 +1,6 @@
 import { Board } from './Board.js';
-import { loadImages } from './loadImages.js';
+import { Piece } from './Piece.js';
 
-const imgSrcs = loadImages();
 export function readFen(fen: string) {
 	const board = new Board();
 	const [
@@ -37,9 +36,9 @@ export function readFen(fen: string) {
 			// Add piece
 			const i = y * 8 + x;
 			const pieceChar = char.toLowerCase();
-			const clrChar = char === pieceChar ? 'd' : 'l';
-			const name = (pieceChar + clrChar) as keyof typeof imgSrcs;
-			board.tiles[i].add(imgSrcs[name]);
+			const clr = char === pieceChar ? 0 : 1;
+			const piece = new Piece(pieceChar, clr);
+			board.tiles[i].add(piece);
 			++x;
 		}
 	}
