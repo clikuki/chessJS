@@ -1,4 +1,6 @@
-import { Piece } from './Piece';
+import BB from './Bitboard.js';
+import { Move } from './MoveGeneration.js';
+import { Piece } from './Piece.js';
 
 export class Tile {
 	elem: HTMLElement;
@@ -10,10 +12,12 @@ export class Tile {
 		grid.elem.appendChild(this.elem);
 		this.color = color;
 	}
-	remove() {
+	pop() {
 		if (!this.piece) return;
+		const piece = this.piece;
 		this.piece.remove();
 		this.piece = null;
+		return piece;
 	}
 	add(piece: Piece) {
 		if (this.piece) return;
@@ -41,6 +45,18 @@ export class Board {
 	enpassantSq: number | null = null;
 	halfMoves: number = 0;
 	fullMoves: number = 1;
+	blackKingBB: BB = new BB();
+	blackQueenBB: BB = new BB();
+	blackRookBB: BB = new BB();
+	blackBishopBB: BB = new BB();
+	blackKnightBB: BB = new BB();
+	blackPawnBB: BB = new BB();
+	whiteKingBB: BB = new BB();
+	whiteQueenBB: BB = new BB();
+	whiteRookBB: BB = new BB();
+	whiteBishopBB: BB = new BB();
+	whiteKnightBB: BB = new BB();
+	whitePawnBB: BB = new BB();
 	constructor(parent = document.body) {
 		this.elem = document.createElement('div');
 		this.elem.classList.add('grid');
@@ -52,5 +68,11 @@ export class Board {
 					.map((_, i) => new Tile(this, ((i + j) % 2) as 0 | 1)),
 			);
 		parent.appendChild(this.elem);
+	}
+	makeMove(move: Move) {
+		const startTile = this.tiles[move.startSq];
+		const targetTile = this.tiles[move.targetSq];
+		targetTile.pop();
+		targetTile.add(startTile.pop()!);
 	}
 }

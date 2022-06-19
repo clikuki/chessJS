@@ -1,5 +1,6 @@
 import { Tile } from './Board.js';
 import { readFen } from './fen.js';
+import { Move } from './MoveGeneration.js';
 
 const tileSize = 70;
 const root = document.querySelector(':root') as HTMLElement;
@@ -19,7 +20,7 @@ const mouse: {
 	boardIndex: 0,
 	isDown: false,
 };
-board.elem.addEventListener('mousedown', (e) => {
+board.elem.addEventListener('mousedown', () => {
 	mouse.isDown = true;
 });
 board.elem.addEventListener('mouseup', () => {
@@ -38,6 +39,7 @@ function setXYOnElement(element: HTMLElement, x: number, y: number) {
 }
 
 let currentTile: Tile | null = null;
+let currentTileIndex: number | null = null;
 function loop() {
 	const hoveredTile = board.tiles[mouse.boardIndex];
 
@@ -50,6 +52,7 @@ function loop() {
 		if (currentTile) {
 			setXYOnElement(currentTile.piece!.img, mouse.x, mouse.y);
 		} else if (hoveredTile.piece) {
+			currentTileIndex = mouse.boardIndex;
 			currentTile = hoveredTile;
 			currentTile.piece!.setDragging(true);
 			setXYOnElement(currentTile.piece!.img, mouse.x, mouse.y);
@@ -57,9 +60,11 @@ function loop() {
 	} else if (currentTile) {
 		const curPiece = currentTile.piece!;
 		if (!hoveredTile.piece || hoveredTile.piece.color !== curPiece.color) {
-			currentTile.remove();
-			hoveredTile.remove();
-			hoveredTile.add(curPiece);
+			const move = new Move(currentTileIndex!, mouse.boardIndex, true);
+			board.makeMove(move);
+			// currentTile.remove();
+			// hoveredTile.remove();
+			// hoveredTile.add(curPiece);
 		}
 
 		curPiece.setDragging(false);
