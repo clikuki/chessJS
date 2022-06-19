@@ -1,0 +1,23 @@
+:root {
+	--dark-tile-clr: hsl(30, 100%, 85%);
+	--light-tile-clr: hsl(20, 100%, 10%);
+	--tile-size: 4.5rem;
+}
+.grid {
+	display: grid;
+	grid-template-columns: repeat(8, var(--tile-size));
+	grid-template-rows: repeat(8, var(--tile-size));
+}
+.tile img {
+	aspect-ratio: 1;
+	width: var(--tile-size);
+}
+.tile.light {
+	background-color: var(--light-tile-clr);
+}
+.tile.dark {
+	background-color: var(--dark-tile-clr);
+}
+.imagePreloading {
+	display: none;
+}
