@@ -41,7 +41,8 @@ let currentTile: Tile | null = null;
 function loop() {
 	const hoveredTile = board.tiles[mouse.boardIndex];
 
-	if (currentTile || hoveredTile.piece)
+	if (currentTile) board.elem.style.setProperty('cursor', 'grabbing');
+	else if (hoveredTile.piece)
 		board.elem.style.setProperty('cursor', 'pointer');
 	else board.elem.style.removeProperty('cursor');
 
