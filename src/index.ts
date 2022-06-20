@@ -94,8 +94,14 @@ grid.addEventListener('mouseup', (e) => {
 			getPieceCharClr(board.pieces[startSq!]!)
 	) {
 		imgs[startSq] = null;
-		imgs[sq]?.remove();
-		imgs[sq] = img;
+		if (board.enpassantSq === sq) {
+			const captureSq = sq + (board.activeClr ? 8 : -8);
+			imgs[captureSq]!.remove();
+			imgs[captureSq] = null;
+		} else {
+			imgs[sq]?.remove();
+			imgs[sq] = img;
+		}
 		tiles[sq].appendChild(img);
 
 		// create move here for now,
