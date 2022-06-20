@@ -12,8 +12,10 @@ const fontSize = parseFloat(computedStyles.fontSize);
 const tileSize = tileSizeInRem * fontSize;
 
 // Load up board
-const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+// const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const startFen = '8/8/8/3qQ3/3rR3/3bB3/8/8 w - - 0 1';
 const board = readFen(startFen);
+board.generateMoves();
 
 // Create dom representation
 const grid = document.createElement('div');
@@ -65,6 +67,14 @@ function getSq(x: number, y: number) {
 	return Math.floor(x / tileSize) + Math.floor(y / tileSize) * 8;
 }
 
+function findMove(startSq: number, targetSq: number) {
+	return (
+		board.moves.find(
+			(move) => move.startSq === startSq && move.targetSq === targetSq,
+		) || null
+	);
+}
+
 let startSq: number | null = null;
 grid.addEventListener('mousedown', (e) => {
 	e.stopPropagation();
@@ -88,10 +98,12 @@ grid.addEventListener('mouseup', (e) => {
 	const img = imgs[startSq]!;
 	const { x, y } = getXY(e);
 	const sq = getSq(x, y);
+	const move = findMove(startSq, sq);
 	if (
-		!board.pieces[sq] ||
-		getPieceCharClr(board.pieces[sq]!) !==
-			getPieceCharClr(board.pieces[startSq!]!)
+		move &&
+		(!board.pieces[sq] ||
+			getPieceCharClr(board.pieces[sq]!) !==
+				getPieceCharClr(board.pieces[startSq!]!))
 	) {
 		imgs[startSq] = null;
 		if (board.enpassantSq === sq) {

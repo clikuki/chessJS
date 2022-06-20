@@ -1,5 +1,5 @@
 import { Bitboard } from './Bitboard.js';
-import { Move } from './MoveGeneration.js';
+import { GenerateMoves, Move } from './MoveGeneration.js';
 import { getPieceCharClr } from './utility.js';
 
 class CastlingRights {
@@ -56,6 +56,7 @@ export class Board {
 	fullMoves = 1;
 	BB = new BBGroup();
 	pieces: (PieceChars | null)[] = new Array(64).fill(null);
+	moves: Move[] = [];
 	makeMove(move: Move) {
 		const movedPiece = this.pieces[move.startSq];
 		if (!movedPiece) return;
@@ -104,6 +105,10 @@ export class Board {
 		else this.halfMoves++;
 		if (!this.activeClr) this.fullMoves++;
 		this.activeClr = this.activeClr ? 0 : 1;
+		this.generateMoves();
+	}
+	generateMoves() {
+		this.moves = GenerateMoves(this);
 	}
 }
 
