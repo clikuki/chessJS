@@ -1,7 +1,7 @@
 :root {
 	--dark-tile-clr: hsl(30, 100%, 85%);
 	--light-tile-clr: hsl(20, 100%, 10%);
-	--tile-size: 4.5rem; /* default value, will be overridden in js  */
+	--tile-size: 4.5rem;
 }
 body {
 	margin: 0;
@@ -11,6 +11,7 @@ body {
 	width: fit-content;
 	grid-template-columns: repeat(8, var(--tile-size));
 	grid-template-rows: repeat(8, var(--tile-size));
+	user-select: none;
 }
 .tile img {
 	aspect-ratio: 1;

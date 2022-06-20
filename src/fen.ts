@@ -1,5 +1,5 @@
-import { Board } from './Board.js';
-import { Piece } from './Piece.js';
+import Bitboard from './Bitboard.js';
+import { Board, PieceChars } from './Board.js';
 
 export function readFen(fen: string) {
 	const board = new Board();
@@ -35,10 +35,8 @@ export function readFen(fen: string) {
 		else {
 			// Add piece
 			const i = y * 8 + x;
-			const pieceChar = char.toLowerCase();
-			const clr = char === pieceChar ? 0 : 1;
-			const piece = new Piece(pieceChar, clr);
-			board.tiles[i].add(piece);
+			board.pieces[i] = char as PieceChars;
+			board.BB[char as PieceChars].or(Bitboard.Mask(i));
 			++x;
 		}
 	}

@@ -1,12 +1,12 @@
-export class BB {
+export class Bitboard {
 	upper: number;
 	lower: number;
 	constructor(lower = 0, upper = 0) {
-		// Force JS to turn floats in integers
+		// Force JS to treat numbers as 2^32 instead of 2^64
 		this.upper = upper | 0;
 		this.lower = lower | 0;
 	}
-	equals(bb: BB) {
+	equals(bb: Bitboard) {
 		return this.upper === bb.upper && this.lower === bb.lower;
 	}
 	isEmpty() {
@@ -25,7 +25,7 @@ export class BB {
 		const lower = shiftBy < 32 ? this.lower << shiftBy : 0;
 		let upper = shiftBy < 64 ? this.upper << shiftBy : 0;
 		upper |= wrappedBits;
-		return new BB(lower, upper);
+		return new Bitboard(lower, upper);
 	}
 	// Unsigned rightshift
 	urShift(shiftBy: number) {
@@ -37,7 +37,7 @@ export class BB {
 		const upper = shiftBy < 32 ? this.upper >>> shiftBy : 0;
 		let lower = shiftBy < 64 ? this.lower >>> shiftBy : 0;
 		lower |= wrappedBits;
-		return new BB(lower, upper);
+		return new Bitboard(lower, upper);
 	}
 	// Signed rightshift
 	srShift(shiftBy: number) {
@@ -64,38 +64,38 @@ export class BB {
 		shifted.upper |= wrappedBits;
 		return shifted;
 	}
-	and(bb: BB) {
+	and(bb: Bitboard) {
 		const upper = this.upper & bb.upper;
 		const lower = this.lower & bb.lower;
-		return new BB(lower, upper);
+		return new Bitboard(lower, upper);
 	}
-	or(bb: BB) {
+	or(bb: Bitboard) {
 		const upper = this.upper | bb.upper;
 		const lower = this.lower | bb.lower;
-		return new BB(lower, upper);
+		return new Bitboard(lower, upper);
 	}
-	xor(bb: BB) {
+	xor(bb: Bitboard) {
 		const upper = this.upper ^ bb.upper;
 		const lower = this.lower ^ bb.lower;
-		return new BB(lower, upper);
+		return new Bitboard(lower, upper);
 	}
 	not() {
 		const upper = ~this.upper >>> 0;
 		const lower = ~this.lower >>> 0;
-		return new BB(lower, upper);
+		return new Bitboard(lower, upper);
 	}
 	popCnt() {
 		return popCnt(this.upper) + popCnt(this.lower);
 	}
-	copy() {
-		return new BB(this.lower, this.upper);
+	clone() {
+		return new Bitboard(this.lower, this.upper);
 	}
 	toString() {
 		let str = '';
 		for (const int of [this.lower, this.upper]) {
 			for (let i = 0; i < 32; i++) {
 				const mask = 1 << i;
-				const char = +!!(int & mask);
+				const char = +Boolean(int & mask);
 				str = `${char}${str}`;
 			}
 			str = ` ${str}`;
@@ -103,10 +103,13 @@ export class BB {
 		return str.trimStart();
 	}
 	static Universal() {
-		return new BB(universal, universal);
+		return new Bitboard(universal, universal);
+	}
+	static Mask(shiftBy: number) {
+		return new Bitboard(1).lShift(shiftBy);
 	}
 }
-export default BB;
+export default Bitboard;
 
 const universal = 0xffffffff | 0;
 export const popCnt = (x: number) => {

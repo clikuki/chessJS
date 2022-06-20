@@ -3,11 +3,20 @@ import { Board } from './Board';
 export class Move {
 	startSq: number;
 	targetSq: number;
-	isSilent: boolean;
-	constructor(startSq: number, targetSq: number, isSilent: boolean) {
+	isEnpassant: boolean;
+	constructor(startSq: number, targetSq: number, isEnpassant = false) {
 		this.startSq = startSq;
 		this.targetSq = targetSq;
-		this.isSilent = isSilent;
+		this.isEnpassant = isEnpassant;
+	}
+}
+
+export class CastlingMove {
+	clr: 0 | 1;
+	side: 0 | 1;
+	constructor(clr: 0 | 1, side: 0 | 1) {
+		this.clr = clr;
+		this.side = side;
 	}
 }
 
