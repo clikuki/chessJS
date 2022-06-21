@@ -70,6 +70,15 @@ export class Board {
 		this.pieces[move.startSq] = null;
 		this.pieces[captureSq] = null;
 		this.pieces[move.targetSq] = movedPiece;
+		if (move.options.isCastling) {
+			const side = move.options.castlingSide!;
+			const oldRookPosition = move.targetSq + (side ? 1 : -2);
+			const newRookPosition = move.targetSq + (side ? -1 : 1);
+			[this.pieces[oldRookPosition], this.pieces[newRookPosition]] = [
+				this.pieces[newRookPosition],
+				this.pieces[oldRookPosition],
+			];
+		}
 
 		// Update bitboards
 		this.BB[movedPiece] = this.BB[movedPiece]
@@ -79,6 +88,15 @@ export class Board {
 			this.BB[capturedPiece] = this.BB[capturedPiece].xor(
 				Bitboard.Mask(captureSq),
 			);
+		if (move.options.isCastling) {
+			const side = move.options.castlingSide!;
+			const oldRookPosition = move.targetSq + (side ? 1 : -2);
+			const newRookPosition = move.targetSq + (side ? -1 : 1);
+			const rookChar = this.activeClr ? 'R' : ('r' as PieceChars);
+			this.BB[rookChar] = this.BB[rookChar]
+				.xor(Bitboard.Mask(oldRookPosition))
+				.or(Bitboard.Mask(newRookPosition));
+		}
 
 		// Update castling rights
 		if (movedPiece.toLowerCase() === 'k') {

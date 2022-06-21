@@ -12,7 +12,8 @@ const tileSize = tileSizeInRem * fontSize;
 
 // Load up board
 // const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const startFen = '8/3kK3/3nN3/3qQ3/3pR3/3bB3/2P5/8 w - - 0 1';
+// const startFen = '8/4k3/8/8/4R3/8/8/4K3 b - - 0 1';
+const startFen = 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1';
 const board = readFen(startFen);
 board.generateMoves();
 
@@ -94,13 +95,13 @@ grid.addEventListener('mousedown', (e) => {
 	startSq = sq;
 });
 grid.addEventListener('mousemove', (e) => {
-	if (!startSq) return;
+	if (startSq === null) return;
 	const { x, y } = getXY(e);
 	const img = imgs[startSq]!;
 	setXYOnElement(img, x, y);
 });
 grid.addEventListener('mouseup', (e) => {
-	if (!startSq) return;
+	if (startSq === null) return;
 	const img = imgs[startSq]!;
 	const { x, y } = getXY(e);
 	const sq = getSq(x, y);
@@ -115,6 +116,16 @@ grid.addEventListener('mouseup', (e) => {
 		imgs[sq]?.remove();
 		imgs[sq] = img;
 		tiles[sq].appendChild(img);
+		if (move.options.isCastling) {
+			const side = move.options.castlingSide!;
+			const oldRookPosition = move.targetSq + (side ? 1 : -2);
+			const newRookPosition = move.targetSq + (side ? -1 : 1);
+			const rookImg = imgs[oldRookPosition]!;
+			rookImg.remove();
+			tiles[newRookPosition].appendChild(rookImg);
+			imgs[oldRookPosition] = null;
+			imgs[newRookPosition] = rookImg;
+		}
 		board.makeMove(move);
 	}
 

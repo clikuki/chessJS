@@ -4,6 +4,8 @@ import { getPieceCharClr } from './utility.js';
 interface MoveOptions {
 	isEnpassant?: boolean;
 	isDoublePush?: boolean;
+	isCastling?: boolean;
+	castlingSide?: 0 | 1;
 }
 export class Move {
 	startSq: number;
@@ -13,15 +15,6 @@ export class Move {
 		this.startSq = startSq;
 		this.targetSq = targetSq;
 		this.options = options;
-	}
-}
-
-export class CastlingMove {
-	clr: 0 | 1;
-	side: 0 | 1;
-	constructor(clr: 0 | 1, side: 0 | 1) {
-		this.clr = clr;
-		this.side = side;
 	}
 }
 
@@ -108,6 +101,7 @@ function generateKingMoves(board: Board, sq: number) {
 	const pieceChar = board.pieces[sq]!;
 	const pieceClr = getPieceCharClr(pieceChar);
 	const sqDist = distFromEdges[sq];
+	// normal movement
 	for (let i = 0; i < 8; i++) {
 		if (!sqDist[i]) continue;
 		const targetSq = sq + offsets[i];
@@ -115,6 +109,20 @@ function generateKingMoves(board: Board, sq: number) {
 		if (!capturedPiece || getPieceCharClr(capturedPiece) !== pieceClr) {
 			moves.push(new Move(sq, targetSq));
 		}
+	}
+
+	// Castling
+	for (const [side, offset] of [
+		[0, -2],
+		[1, 2],
+	] as const) {
+		if (board.castlingRights.can(pieceClr, side))
+			moves.push(
+				new Move(sq, sq + offset, {
+					isCastling: true,
+					castlingSide: side,
+				}),
+			);
 	}
 	return moves;
 }
@@ -180,7 +188,7 @@ function generatePseudoLegalMoves(board: Board) {
 				break;
 		}
 	}
-	console.log('done');
+	// console.log('done');
 	return moves;
 }
 
