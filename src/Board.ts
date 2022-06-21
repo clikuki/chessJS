@@ -61,13 +61,14 @@ export class Board {
 		const movedPiece = this.pieces[move.startSq];
 		if (!movedPiece) return;
 		const captureSq =
-			move.isEnpassant && this.enpassantSq
-				? this.enpassantSq
+			move.options.isEnpassant && this.enpassantSq
+				? this.enpassantSq + (this.activeClr ? 8 : -8)
 				: move.targetSq;
 		const capturedPiece = this.pieces[captureSq];
 
 		// Update pieces array
 		this.pieces[move.startSq] = null;
+		this.pieces[captureSq] = null;
 		this.pieces[move.targetSq] = movedPiece;
 
 		// Update bitboards
@@ -99,7 +100,9 @@ export class Board {
 				}
 			});
 
-		this.enpassantSq = null;
+		if (move.options.isDoublePush) {
+			this.enpassantSq = move.targetSq + (this.activeClr ? 8 : -8);
+		} else this.enpassantSq = null;
 		if (capturedPiece || movedPiece === 'P' || movedPiece === 'p')
 			this.halfMoves = 0;
 		else this.halfMoves++;

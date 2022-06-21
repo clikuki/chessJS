@@ -1,14 +1,18 @@
 import { Board } from './Board.js';
 import { getPieceCharClr } from './utility.js';
 
+interface MoveOptions {
+	isEnpassant?: boolean;
+	isDoublePush?: boolean;
+}
 export class Move {
 	startSq: number;
 	targetSq: number;
-	isEnpassant: boolean;
-	constructor(startSq: number, targetSq: number, isEnpassant = false) {
+	options: MoveOptions;
+	constructor(startSq: number, targetSq: number, options: MoveOptions = {}) {
 		this.startSq = startSq;
 		this.targetSq = targetSq;
-		this.isEnpassant = isEnpassant;
+		this.options = options;
 	}
 }
 
@@ -115,7 +119,6 @@ function generateKingMoves(board: Board, sq: number) {
 	return moves;
 }
 
-// TODO: add en passant
 function generatePawnMoves(board: Board, sq: number) {
 	const moves: Move[] = [];
 	const sqDist = distFromEdges[sq];
@@ -131,7 +134,9 @@ function generatePawnMoves(board: Board, sq: number) {
 		for (let i = 1; i <= moveDistance; i++) {
 			const targetSq = sq + silentOffset * i;
 			if (board.pieces[targetSq]) break;
-			moves.push(new Move(sq, targetSq));
+			moves.push(
+				new Move(sq, targetSq, { isDoublePush: Boolean(i - 1) }),
+			);
 		}
 	}
 
@@ -139,11 +144,17 @@ function generatePawnMoves(board: Board, sq: number) {
 		const offset = offsets[offsetIndex];
 		const targetSq = sq + offset;
 		const capturedPiece = board.pieces[targetSq];
-		if (capturedPiece && getPieceCharClr(capturedPiece) !== pieceClr) {
-			moves.push(new Move(sq, targetSq));
+		if (
+			targetSq === board.enpassantSq ||
+			(capturedPiece && getPieceCharClr(capturedPiece) !== pieceClr)
+		) {
+			moves.push(
+				new Move(sq, targetSq, {
+					isEnpassant: targetSq === board.enpassantSq,
+				}),
+			);
 		}
 	}
-
 	return moves;
 }
 
@@ -169,7 +180,7 @@ function generatePseudoLegalMoves(board: Board) {
 				break;
 		}
 	}
-	// console.log('done');
+	console.log('done');
 	return moves;
 }
 
