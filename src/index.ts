@@ -1,6 +1,5 @@
 import { readFen } from './fen.js';
 import { ImageSrcContainer, imgSrcs } from './loadImages.js';
-import { Move } from './MoveGeneration.js';
 import { getPieceCharClr } from './utility.js';
 
 // Get tile size
@@ -13,7 +12,7 @@ const tileSize = tileSizeInRem * fontSize;
 
 // Load up board
 // const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const startFen = '8/8/8/3qQ3/3rR3/3bB3/8/8 w - - 0 1';
+const startFen = '8/3kK3/3nN3/3qQ3/3rR3/3bB3/8/8 w - - 0 1';
 const board = readFen(startFen);
 board.generateMoves();
 
@@ -75,6 +74,13 @@ function findMove(startSq: number, targetSq: number) {
 	);
 }
 
+function canTakeSq(startSq: number, targetSq: number) {
+	const moved = board.pieces[startSq];
+	const captured = board.pieces[targetSq];
+	if (!moved) throw 'Moved piece is null';
+	return !captured || getPieceCharClr(captured) !== getPieceCharClr(moved);
+}
+
 let startSq: number | null = null;
 grid.addEventListener('mousedown', (e) => {
 	e.stopPropagation();
@@ -99,12 +105,7 @@ grid.addEventListener('mouseup', (e) => {
 	const { x, y } = getXY(e);
 	const sq = getSq(x, y);
 	const move = findMove(startSq, sq);
-	if (
-		move &&
-		(!board.pieces[sq] ||
-			getPieceCharClr(board.pieces[sq]!) !==
-				getPieceCharClr(board.pieces[startSq!]!))
-	) {
+	if (move && canTakeSq(startSq, sq)) {
 		imgs[startSq] = null;
 		if (board.enpassantSq === sq) {
 			const captureSq = sq + (board.activeClr ? 8 : -8);
@@ -115,10 +116,6 @@ grid.addEventListener('mouseup', (e) => {
 			imgs[sq] = img;
 		}
 		tiles[sq].appendChild(img);
-
-		// create move here for now,
-		// eventually moves will be taken from a move list
-		const move = new Move(startSq, sq);
 		board.makeMove(move);
 	}
 

@@ -21,6 +21,7 @@ export class CastlingMove {
 	}
 }
 
+const offsets = [-8, 1, 8, -1, /**/ -9, -7, 9, 7];
 const distFromEdges = (() => {
 	const distArr = [];
 
@@ -54,7 +55,6 @@ function generateSlidingMoves(board: Board, sq: number) {
 	const lcPieceChar = pieceChar.toLowerCase();
 	const pieceClr = getPieceCharClr(pieceChar);
 	const sqDist = distFromEdges[sq];
-	const offsets = [-8, 1, 8, -1, -9, -7, 9, 7];
 	const start = lcPieceChar === 'b' ? 4 : 0;
 	const end = lcPieceChar === 'r' ? 4 : 8;
 	for (let i = start; i < end; i++) {
@@ -73,10 +73,53 @@ function generateSlidingMoves(board: Board, sq: number) {
 	return moves;
 }
 
+function generateKnightMoves(board: Board, sq: number) {
+	const moves: Move[] = [];
+	const pieceChar = board.pieces[sq]!;
+	const pieceClr = getPieceCharClr(pieceChar);
+	const offsetIndices = [
+		[0, [4, 5]],
+		[1, [5, 6]],
+		[2, [6, 7]],
+		[3, [4, 7]],
+	] as const;
+	for (const [firstOffsetIndex, secondOffsetIndices] of offsetIndices) {
+		const midSq = sq + offsets[firstOffsetIndex];
+		if (!distFromEdges[sq][firstOffsetIndex]) continue;
+		for (const secondOffsetIndex of secondOffsetIndices) {
+			const targetSq = midSq + offsets[secondOffsetIndex];
+			if (!distFromEdges[midSq][secondOffsetIndex]) continue;
+			const capturedPiece = board.pieces[targetSq];
+			if (capturedPiece && getPieceCharClr(capturedPiece) === pieceClr)
+				continue;
+			moves.push(new Move(sq, targetSq));
+			if (capturedPiece) continue;
+		}
+	}
+	return moves;
+}
+
+function generateKingMoves(board: Board, sq: number) {
+	const moves: Move[] = [];
+	const pieceChar = board.pieces[sq]!;
+	const pieceClr = getPieceCharClr(pieceChar);
+	const sqDist = distFromEdges[sq];
+	for (let i = 0; i < 8; i++) {
+		if (!sqDist[i]) continue;
+		const targetSq = sq + offsets[i];
+		const capturedPiece = board.pieces[targetSq];
+		if (!capturedPiece || getPieceCharClr(capturedPiece) !== pieceClr) {
+			moves.push(new Move(sq, targetSq));
+		}
+	}
+	return moves;
+}
+
 function generatePseudoLegalMoves(board: Board) {
 	const moves: Move[] = [];
-	for (let i = 0; i < 64; i++) {
-		const piece = board.pieces[i];
+	for (let sq = 0; sq < 64; sq++) {
+		const piece = board.pieces[sq];
+		if (!piece || getPieceCharClr(piece) !== board.activeClr) continue;
 		switch (piece) {
 			case 'Q':
 			case 'q':
@@ -84,7 +127,15 @@ function generatePseudoLegalMoves(board: Board) {
 			case 'r':
 			case 'B':
 			case 'b':
-				moves.push(...generateSlidingMoves(board, i));
+				moves.push(...generateSlidingMoves(board, sq));
+				break;
+			case 'N':
+			case 'n':
+				moves.push(...generateKnightMoves(board, sq));
+				break;
+			case 'K':
+			case 'k':
+				moves.push(...generateKingMoves(board, sq));
 				break;
 		}
 	}
