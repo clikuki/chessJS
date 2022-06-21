@@ -1,6 +1,6 @@
 :root {
-	--dark-tile-clr: hsl(30, 100%, 85%);
-	--light-tile-clr: hsl(20, 100%, 10%);
+	--dark-tile-clr: hsl(38, 69%, 82%);
+	--light-tile-clr: hsl(28, 37%, 55%);
 	--tile-size: 4.5rem;
 }
 body {
