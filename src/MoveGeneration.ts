@@ -115,27 +115,57 @@ function generateKingMoves(board: Board, sq: number) {
 	return moves;
 }
 
+// TODO: add en passant
+function generatePawnMoves(board: Board, sq: number) {
+	const moves: Move[] = [];
+	const sqDist = distFromEdges[sq];
+	const pieceChar = board.pieces[sq]!;
+	const pieceClr = getPieceCharClr(pieceChar);
+	const silentOffsetIndex = pieceClr ? 0 : 2;
+	const captureOffsetIndices = pieceClr ? [4, 5] : [6, 7];
+
+	const silentEdgeDist = sqDist[silentOffsetIndex];
+	if (silentEdgeDist) {
+		const silentOffset = offsets[silentOffsetIndex];
+		const moveDistance = silentEdgeDist === 6 ? 2 : 1;
+		for (let i = 1; i <= moveDistance; i++) {
+			const targetSq = sq + silentOffset * i;
+			if (board.pieces[targetSq]) break;
+			moves.push(new Move(sq, targetSq));
+		}
+	}
+
+	for (const offsetIndex of captureOffsetIndices) {
+		const offset = offsets[offsetIndex];
+		const targetSq = sq + offset;
+		const capturedPiece = board.pieces[targetSq];
+		if (capturedPiece && getPieceCharClr(capturedPiece) !== pieceClr) {
+			moves.push(new Move(sq, targetSq));
+		}
+	}
+
+	return moves;
+}
+
 function generatePseudoLegalMoves(board: Board) {
 	const moves: Move[] = [];
 	for (let sq = 0; sq < 64; sq++) {
 		const piece = board.pieces[sq];
 		if (!piece || getPieceCharClr(piece) !== board.activeClr) continue;
-		switch (piece) {
-			case 'Q':
+		switch (piece.toLowerCase()) {
 			case 'q':
-			case 'R':
 			case 'r':
-			case 'B':
 			case 'b':
 				moves.push(...generateSlidingMoves(board, sq));
 				break;
-			case 'N':
 			case 'n':
 				moves.push(...generateKnightMoves(board, sq));
 				break;
-			case 'K':
 			case 'k':
 				moves.push(...generateKingMoves(board, sq));
+				break;
+			case 'p':
+				moves.push(...generatePawnMoves(board, sq));
 				break;
 		}
 	}
