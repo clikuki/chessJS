@@ -69,9 +69,13 @@ export class Bitboard {
 		const lower = this.lower & bb.lower;
 		return new Bitboard(lower, upper);
 	}
-	or(bb: Bitboard) {
-		const upper = this.upper | bb.upper;
-		const lower = this.lower | bb.lower;
+	or(...bbArr: Bitboard[]) {
+		let upper = this.upper;
+		let lower = this.lower;
+		for (const bb of bbArr) {
+			upper = upper | bb.upper;
+			lower = lower | bb.lower;
+		}
 		return new Bitboard(lower, upper);
 	}
 	xor(bb: Bitboard) {
@@ -90,7 +94,7 @@ export class Bitboard {
 	clone() {
 		return new Bitboard(this.lower, this.upper);
 	}
-	toString() {
+	toString(separator?: boolean) {
 		let str = '';
 		for (const int of [this.lower, this.upper]) {
 			for (let i = 0; i < 32; i++) {
@@ -98,7 +102,7 @@ export class Bitboard {
 				const char = +Boolean(int & mask);
 				str = `${char}${str}`;
 			}
-			str = ` ${str}`;
+			str = `${separator ? ' ' : ''}${str}`;
 		}
 		return str.trimStart();
 	}
