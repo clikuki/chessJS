@@ -166,7 +166,7 @@ function generatePawnMoves(board: Board, sq: number) {
 	return moves;
 }
 
-function generatePseudoLegalMoves(board: Board) {
+export function generatePseudoLegalMoves(board: Board) {
 	const moves: Move[] = [];
 	for (let sq = 0; sq < 64; sq++) {
 		const piece = board.pieces[sq];
@@ -190,9 +190,4 @@ function generatePseudoLegalMoves(board: Board) {
 	}
 	// console.log('done');
 	return moves;
-}
-
-export function GenerateMoves(board: Board) {
-	// TODO: added move legality checker
-	return generatePseudoLegalMoves(board);
 }

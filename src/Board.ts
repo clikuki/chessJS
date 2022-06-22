@@ -1,5 +1,6 @@
 import { Bitboard } from './Bitboard.js';
-import { GenerateMoves, Move } from './MoveGeneration.js';
+import { GenerateBitboards } from './BitboardGenerator.js';
+import { generatePseudoLegalMoves, Move } from './MoveGenerator.js';
 import { getPieceCharClr } from './utility.js';
 
 class CastlingRights {
@@ -129,7 +130,8 @@ export class Board {
 		this.generateMoves();
 	}
 	generateMoves() {
-		this.moves = GenerateMoves(this);
+		GenerateBitboards(this);
+		this.moves = generatePseudoLegalMoves(this);
 	}
 }
 

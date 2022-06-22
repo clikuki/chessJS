@@ -64,9 +64,13 @@ export class Bitboard {
 		shifted.upper |= wrappedBits;
 		return shifted;
 	}
-	and(bb: Bitboard) {
-		const upper = this.upper & bb.upper;
-		const lower = this.lower & bb.lower;
+	and(...bbArr: Bitboard[]) {
+		let upper = this.upper;
+		let lower = this.lower;
+		for (const bb of bbArr) {
+			upper = upper & bb.upper;
+			lower = lower & bb.lower;
+		}
 		return new Bitboard(lower, upper);
 	}
 	or(...bbArr: Bitboard[]) {

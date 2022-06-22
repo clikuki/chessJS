@@ -35,8 +35,9 @@ export function readFen(fen: string) {
 		else {
 			// Add piece
 			const i = y * 8 + x;
-			board.pieces[i] = char as PieceChars;
-			board.BB[char as PieceChars].or(Bitboard.Mask(i));
+			const pcChar = char as PieceChars;
+			board.pieces[i] = pcChar;
+			board.BB[pcChar] = board.BB[pcChar].or(Bitboard.Mask(i));
 			++x;
 		}
 	}
