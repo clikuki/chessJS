@@ -9,13 +9,17 @@ function getClrPiecesUnion(board: Board) {
 	];
 }
 
-const noRightEdge = new Bitboard(0x7f7f7f7f, 0x7f7f7f7f);
-const noLeftEdge = new Bitboard(0xfefefefe, 0xfefefefe);
-const noBottomEdge = new Bitboard(0xffffffff, 0xffffff);
 const noTopEdge = new Bitboard(0xffffff00, 0xffffffff);
+const noRightEdge = new Bitboard(0x7f7f7f7f, 0x7f7f7f7f);
+const noBottomEdge = new Bitboard(0xffffffff, 0xffffff);
+const noLeftEdge = new Bitboard(0xfefefefe, 0xfefefefe);
+const noNwEdge = noTopEdge.and(noLeftEdge);
+const noNeEdge = noTopEdge.and(noRightEdge);
+const noSeEdge = noBottomEdge.and(noRightEdge);
+const noSwEdge = noBottomEdge.and(noLeftEdge);
 const wTwoPush = new Bitboard(0, 0xff00);
 const bTwoPush = new Bitboard(0xff0000, 0);
-function getPawnMoves(
+function getPawnBoards(
 	board: Board,
 	allBlackPcs: Bitboard,
 	allWhitePcs: Bitboard,
@@ -48,13 +52,12 @@ function getPawnMoves(
 	});
 }
 
-function getRookMoves(
-	board: Board,
+function getOrthogonalBoards(
+	black: Bitboard,
+	white: Bitboard,
 	allBlackPcs: Bitboard,
 	allWhitePcs: Bitboard,
 ) {
-	const black = board.BB.r;
-	const white = board.BB.R;
 	const allBlackNot = allBlackPcs.not();
 	const allWhiteNot = allWhitePcs.not();
 	let blackTop = black;
@@ -98,9 +101,89 @@ function getRookMoves(
 	];
 }
 
+function getDiagonalBoards(
+	black: Bitboard,
+	white: Bitboard,
+	allBlackPcs: Bitboard,
+	allWhitePcs: Bitboard,
+) {
+	const allBlackNot = allBlackPcs.not();
+	const allWhiteNot = allWhitePcs.not();
+	let blackNW = black;
+	let whiteNW = white;
+	let blackNE = black;
+	let whiteNE = white;
+	let blackSE = black;
+	let whiteSE = white;
+	let blackSW = black;
+	let whiteSW = white;
+	for (let i = 0; i < 8; i++) {
+		blackNW = blackNW.or(
+			blackNW
+				.urShift(9)
+				.and(noSeEdge, allBlackNot, allWhiteNot.urShift(9)),
+		);
+		whiteNW = whiteNW.or(
+			whiteNW
+				.urShift(9)
+				.and(noSeEdge, allWhiteNot, allBlackNot.urShift(9)),
+		);
+		blackNE = blackNE.or(
+			blackNE
+				.urShift(7)
+				.and(noSwEdge, allBlackNot, allWhiteNot.urShift(7)),
+		);
+		whiteNE = whiteNE.or(
+			whiteNE
+				.urShift(7)
+				.and(noSwEdge, allWhiteNot, allBlackNot.urShift(7)),
+		);
+		blackSE = blackSE.or(
+			blackSE.lShift(9).and(noNwEdge, allBlackNot, allWhiteNot.lShift(9)),
+		);
+		whiteSE = whiteSE.or(
+			whiteSE.lShift(9).and(noNwEdge, allWhiteNot, allBlackNot.lShift(9)),
+		);
+		blackSW = blackSW.or(
+			blackSW.lShift(7).and(noNeEdge, allBlackNot, allWhiteNot.lShift(7)),
+		);
+		whiteSW = whiteSW.or(
+			whiteSW.lShift(7).and(noNeEdge, allWhiteNot, allBlackNot.lShift(7)),
+		);
+	}
+	return [
+		blackNW.or(blackNE, blackSE, blackSW).xor(black),
+		whiteNW.or(whiteNE, whiteSE, whiteSW).xor(white),
+	];
+}
+
 export function GenerateBitboards(board: Board) {
 	const [allBlackPcs, allWhitePcs] = getClrPiecesUnion(board);
-	const pawnMoves = getPawnMoves(board, allBlackPcs, allWhitePcs);
-	const rookMoves = getRookMoves(board, allBlackPcs, allWhitePcs);
-	rookMoves.forEach((bb) => console.log(bb.toString()));
+	const pawnMoves = getPawnBoards(board, allBlackPcs, allWhitePcs);
+	const rookMoves = getOrthogonalBoards(
+		board.BB.r,
+		board.BB.R,
+		allBlackPcs,
+		allWhitePcs,
+	);
+	const bishopMoves = getDiagonalBoards(
+		board.BB.b,
+		board.BB.B,
+		allBlackPcs,
+		allWhitePcs,
+	);
+	const queenDiagonal = getDiagonalBoards(
+		board.BB.q,
+		board.BB.Q,
+		allBlackPcs,
+		allWhitePcs,
+	);
+	const queenOrthogonal = getOrthogonalBoards(
+		board.BB.q,
+		board.BB.Q,
+		allBlackPcs,
+		allWhitePcs,
+	);
+	const queenMoves = queenDiagonal.map((d, i) => d.or(queenOrthogonal[i]));
+	queenMoves.forEach((bb) => console.log(bb.toString()));
 }
