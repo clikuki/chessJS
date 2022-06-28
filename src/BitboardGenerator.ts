@@ -87,69 +87,53 @@ function noWeFill(bb: Bitboard) {
 }
 
 function getOrthogonal(pc: Bitboard, occupied: Bitboard) {
-	occupied = occupied.xor(pc).and(occupied);
+	occupied = occupied.and(pc.not());
 	let ortho = nortFill(pc).and(
-		nortFill(occupied.and(soutFill(pc).not()))
-			.xor(occupied)
-			.not(),
+		nortFill(occupied.urShift(8).and(soutFill(pc).not())).not(),
 	);
 	ortho = ortho.or(
 		eastFill(pc).and(
-			eastFill(occupied.and(westFill(pc).not()))
-				.xor(occupied)
-				.not(),
+			eastFill(occupied.lShift(1).and(westFill(pc).not())).not(),
 		),
 	);
 	ortho = ortho.or(
 		soutFill(pc).and(
-			soutFill(occupied.and(nortFill(pc).not()))
-				.xor(occupied)
-				.not(),
+			soutFill(occupied.lShift(8).and(nortFill(pc).not())).not(),
 		),
 	);
 	ortho = ortho.or(
 		westFill(pc).and(
-			westFill(occupied.and(eastFill(pc).not()))
-				.xor(occupied)
-				.not(),
+			westFill(occupied.urShift(1).and(eastFill(pc).not())).not(),
 		),
 	);
-	return ortho;
+	return ortho.xor(pc);
 }
 
 function getDiagonal(pc: Bitboard, occupied: Bitboard) {
-	occupied = occupied.xor(pc).and(occupied);
+	occupied = occupied.and(pc.not());
 	let diagonal = noWeFill(pc).and(
-		noWeFill(occupied.and(soEaFill(pc).not()))
-			.xor(occupied)
-			.not(),
+		noWeFill(occupied.urShift(9).and(soEaFill(pc).not())).not(),
 	);
 	diagonal = diagonal.or(
 		noEaFill(pc).and(
-			noEaFill(occupied.and(soWeFill(pc).not()))
-				.xor(occupied)
-				.not(),
+			noEaFill(occupied.urShift(7).and(soWeFill(pc).not())).not(),
 		),
 	);
 	diagonal = diagonal.or(
 		soEaFill(pc).and(
-			soEaFill(occupied.and(noWeFill(pc).not()))
-				.xor(occupied)
-				.not(),
+			soEaFill(occupied.lShift(9).and(noWeFill(pc).not())).not(),
 		),
 	);
 	diagonal = diagonal.or(
 		soWeFill(pc).and(
-			soWeFill(occupied.and(noEaFill(pc).not()))
-				.xor(occupied)
-				.not(),
+			soWeFill(occupied.lShift(7).and(noEaFill(pc).not())).not(),
 		),
 	);
 	return diagonal;
 }
 
 function getKnight(pc: Bitboard, occupied: Bitboard) {
-	occupied = occupied.xor(pc).and(occupied);
+	occupied = occupied.and(pc.not());
 	let knight = pc.urShift(17).and(knightUulSet);
 	knight = knight.or(pc.urShift(15).and(knightUurSet));
 	knight = knight.or(pc.urShift(10).and(knightLluSet));
@@ -161,19 +145,19 @@ function getKnight(pc: Bitboard, occupied: Bitboard) {
 	return knight;
 }
 
-function getPawnPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
-	occupied = occupied.xor(pc).and(occupied);
-	const shf = clr ? 'urShift' : 'lShift';
-	return pc[shf](8).and(occupied.not());
-}
+// function getPawnPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
+// 	occupied = occupied.and(pc.not());
+// 	const shf = clr ? 'urShift' : 'lShift';
+// 	return pc[shf](8).and(occupied.not());
+// }
 
-function getPawnDblPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
-	occupied = occupied.xor(pc).and(occupied);
-	const shf = clr ? 'urShift' : 'lShift';
-	const dblPushRank = clr ? new Bitboard(0, 0xff00) : new Bitboard(0xff0000);
-	const singlePush = getPawnPushes(pc, occupied, clr);
-	return singlePush.and(dblPushRank)[shf](8).and(occupied.not());
-}
+// function getPawnDblPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
+// 	occupied = occupied.and(pc.not());
+// 	const shf = clr ? 'urShift' : 'lShift';
+// 	const dblPushRank = clr ? new Bitboard(0, 0xff00) : new Bitboard(0xff0000);
+// 	const singlePush = getPawnPushes(pc, occupied, clr);
+// 	return singlePush.and(dblPushRank)[shf](8).and(occupied.not());
+// }
 
 function getPawnAttacks(
 	pc: Bitboard,
@@ -181,7 +165,7 @@ function getPawnAttacks(
 	clr: 0 | 1,
 	enpassantSq: number | null,
 ) {
-	occupied = occupied.xor(pc).and(occupied);
+	occupied = occupied.and(pc.not());
 	const enpassant = enpassantSq ? Bitboard.Mask(enpassantSq) : new Bitboard();
 	const attackable = occupied.or(enpassant);
 	const shf = clr ? 'urShift' : 'lShift';
@@ -190,7 +174,7 @@ function getPawnAttacks(
 }
 
 function getKing(pc: Bitboard, occupied: Bitboard, enemyAttacks: Bitboard) {
-	occupied = occupied.xor(pc).and(occupied);
+	occupied = occupied.and(pc.not());
 	let king = pc.urShift(9);
 	king = king.or(pc.urShift(8));
 	king = king.or(pc.urShift(7));
@@ -231,18 +215,20 @@ function getPinned(
 	return [pinned, pinnedMoves];
 }
 
-function pinGenWrapper(
-	pc: Bitboard,
-	pinned: Bitboard,
-	pinMoves: Bitboard,
-	occupied: Bitboard,
-	gen: (...n: any) => Bitboard,
-	...extraParams: any[]
-) {
-	const normalMoves = gen(pc.xor(pinned).and(pc), occupied, ...extraParams);
-	const pinnedMoves = gen(pinned, occupied, ...extraParams).and(pinMoves);
-	return normalMoves.or(pinnedMoves);
-}
+// function pinGenWrapper(
+// 	pc: Bitboard,
+// 	pinned: Bitboard,
+// 	pinMoves: Bitboard,
+// 	occupied: Bitboard,
+// 	gen: (...n: any) => Bitboard,
+// 	...extraParams: any[]
+// ) {
+// 	const normalMoves = gen(pc.and(pinned.not()), occupied, ...extraParams);
+// 	const pinnedMoves = gen(pinned.and(pc), occupied, ...extraParams).and(
+// 		pinMoves,
+// 	);
+// 	return normalMoves.or(pinnedMoves);
+// }
 
 export function GenerateBitboards(board: Board) {
 	const bb = board.BB;
@@ -252,7 +238,8 @@ export function GenerateBitboards(board: Board) {
 	const allBlack = bb.q.or(blackKing, bb.r, bb.b, bb.n, bb.p);
 	const allWhiteNoKing = allWhite.xor(whiteKing);
 	const allBlackNoKing = allBlack.xor(blackKing);
-	const occupied = allBlackNoKing.or(allWhiteNoKing);
+	const occupied = allBlack.or(allWhite);
+	const occupiedNoKings = allBlackNoKing.or(allWhiteNoKing);
 
 	const [whiteDiagonalPins, whiteDiagonalPinMoves] = getPinned(
 		whiteKing,
@@ -287,196 +274,87 @@ export function GenerateBitboards(board: Board) {
 	const whitePinned = whiteDiagonalPins.or(whiteOrthogonalPins);
 	const whitePinMoves = whiteDiagonalPinMoves.or(whiteOrthogonalPinMoves);
 
-	const blackRookMoves = pinGenWrapper(
-		bb.r,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		getOrthogonal,
-	);
-	const blackBishopMoves = pinGenWrapper(
-		bb.b,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		getDiagonal,
-	);
-	const blackQueenMoves = pinGenWrapper(
-		bb.q,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		(pc: Bitboard, occupied: Bitboard) =>
-			getOrthogonal(pc, occupied).or(getDiagonal(pc, occupied)),
-	);
-	const blackKnightMoves = pinGenWrapper(
-		bb.n,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		getKnight,
-	);
-	const blackPawnPushes = pinGenWrapper(
-		bb.p,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		getPawnPushes,
-		0,
-	);
-	const blackPawnDblPushes = pinGenWrapper(
-		bb.p,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		getPawnDblPushes,
-		0,
-	);
-	const blackPawnAtks = pinGenWrapper(
-		bb.p,
-		blackPinned,
-		blackPinMoves,
-		occupied,
-		getPawnAttacks,
-		0,
-		board.enpassantSq,
-	);
-	let blackMoves = blackQueenMoves.or(
-		blackRookMoves,
-		blackBishopMoves,
-		blackKnightMoves,
-		blackPawnPushes,
-		blackPawnDblPushes,
-		blackPawnAtks,
-	);
-
-	const whiteRookMoves = pinGenWrapper(
-		bb.R,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		getOrthogonal,
-	);
-	const whiteBishopMoves = pinGenWrapper(
-		bb.B,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		getDiagonal,
-	);
-	const whiteQueenMoves = pinGenWrapper(
-		bb.Q,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		(pc: Bitboard, occupied: Bitboard) =>
-			getOrthogonal(pc, occupied).or(getDiagonal(pc, occupied)),
-	);
-	const whiteKnightMoves = pinGenWrapper(
-		bb.N,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		getKnight,
-	);
-	const whitePawnPushes = pinGenWrapper(
-		bb.P,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		getPawnPushes,
-		0,
-	);
-	const whitePawnDblPushes = pinGenWrapper(
-		bb.P,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		getPawnDblPushes,
-		0,
-	);
-	const whitePawnAtks = pinGenWrapper(
-		bb.P,
-		whitePinned,
-		whitePinMoves,
-		occupied,
-		getPawnAttacks,
-		0,
-		board.enpassantSq,
-	);
-	let whiteMoves = whiteQueenMoves.or(
-		whiteRookMoves,
-		whiteBishopMoves,
-		whiteKnightMoves,
-		whitePawnPushes,
-		whitePawnDblPushes,
-		whitePawnAtks,
-	);
-
-	let blackPseudoLegalAtks = getOrthogonal(bb.r.or(bb.q), occupied);
+	let blackPseudoLegalAtks = getOrthogonal(bb.r.or(bb.q), occupiedNoKings);
 	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
-		getDiagonal(bb.b.or(bb.q), occupied),
+		getDiagonal(bb.b.or(bb.q), occupiedNoKings),
 	);
-	blackPseudoLegalAtks = blackPseudoLegalAtks.or(getKnight(bb.n, occupied));
 	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
-		getPawnAttacks(bb.p, occupied, 0, board.enpassantSq),
+		getKnight(bb.n, occupiedNoKings),
 	);
-	let whitePseudoLegalAtks = getOrthogonal(bb.R.or(bb.Q), occupied);
-	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
-		getDiagonal(bb.B.or(bb.Q), occupied),
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getPawnAttacks(bb.p, occupiedNoKings, 0, board.enpassantSq),
 	);
-	whitePseudoLegalAtks = whitePseudoLegalAtks.or(getKnight(bb.N, occupied));
+	let whitePseudoLegalAtks = getOrthogonal(bb.R.or(bb.Q), occupiedNoKings);
 	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
-		getPawnAttacks(bb.P, occupied, 1, board.enpassantSq),
+		getDiagonal(bb.B.or(bb.Q), occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getKnight(bb.N, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getPawnAttacks(bb.P, occupiedNoKings, 1, board.enpassantSq),
 	);
 	const [blackKingMoves, whiteKingMoves] = getKingPair(
 		blackKing,
 		whiteKing,
 		blackPseudoLegalAtks,
 		whitePseudoLegalAtks,
-		occupied,
+		occupiedNoKings,
 	);
 
-	// const blackCheckCount = [
-	// 	getKnight(bb.N, occupied).and(bb.P),
-	// 	getPawnAttacks(bb.P, occupied, 1, board.enpassantSq).and(bb.P),
-	// 	getDiagonal(bb.B.or(bb.Q), occupied).and(bb.B.or(bb.Q)),
-	// 	getOrthogonal(bb.R.or(bb.Q), occupied).and(bb.R.or(bb.Q)),
-	// ].filter((checker) => !checker.isEmpty()).length;
-	// const whiteCheckCount = [
-	// 	getKnight(bb.n, occupied).and(bb.p),
-	// 	getPawnAttacks(bb.p, occupied, 0, board.enpassantSq).and(bb.p),
-	// 	getDiagonal(bb.b.or(bb.q), occupied).and(bb.b.or(bb.q)),
-	// 	getOrthogonal(bb.r.or(bb.q), occupied).and(bb.r.or(bb.q)),
-	// ].filter((checker) => !checker.isEmpty()).length;
-	// const checkCount = Math.max(blackCheckCount, whiteCheckCount);
-	// [
-	// 	board.activeClr
-	// 		? getKnight(bb.K, occupied).and(bb.p)
-	// 		: getKnight(bb.k, occupied).and(bb.P),
-	// 	board.activeClr
-	// 		? getPawnAttacks(bb.K, occupied, 0, board.enpassantSq).and(bb.p)
-	// 		: getPawnAttacks(bb.k, occupied, 1, board.enpassantSq).and(bb.P),
-	// 	board.activeClr
-	// 		? getDiagonal(bb.K, occupied).and(bb.b.or(bb.q))
-	// 		: getDiagonal(bb.k, occupied).and(bb.B.or(bb.Q)),
-	// 	board.activeClr
-	// 		? getOrthogonal(bb.K, occupied).and(bb.r.or(bb.q))
-	// 		: getOrthogonal(bb.k, occupied).and(bb.R.or(bb.Q)),
-	// ]
-
 	let checkCount = 0;
-	let attacks = new Bitboard();
+	const knightChecker = getKnight(
+		board.activeClr ? bb.K : bb.k,
+		occupied,
+	).and(board.activeClr ? bb.n : bb.N);
+	const pawnChecker = getPawnAttacks(
+		board.activeClr ? bb.K : bb.k,
+		occupiedNoKings,
+		1,
+		board.enpassantSq,
+	).and(board.activeClr ? bb.p : bb.P);
+	const diagonalChecker = getDiagonal(
+		board.activeClr ? bb.K : bb.k,
+		occupied,
+	).and((board.activeClr ? bb.b : bb.B).or(board.activeClr ? bb.q : bb.Q));
+	const orthogonalChecker = getOrthogonal(
+		board.activeClr ? bb.K : bb.k,
+		occupied,
+	).and((board.activeClr ? bb.r : bb.R).or(board.activeClr ? bb.q : bb.Q));
+	let checkers = knightChecker.or(
+		pawnChecker,
+		diagonalChecker,
+		orthogonalChecker,
+	);
 
+	const inKnightCheck = !knightChecker.isEmpty();
+	const inPawnCheck = !pawnChecker.isEmpty();
+	const inDiagonalCheck = !diagonalChecker.isEmpty();
+	const inOrthogonalCheck = !orthogonalChecker.isEmpty();
+	if (inKnightCheck) checkCount++;
+	if (inPawnCheck) checkCount++;
+	if (inDiagonalCheck) checkCount++;
+	if (inOrthogonalCheck) checkCount++;
+
+	let checkRays = new Bitboard();
+	if (inDiagonalCheck) {
+		checkRays = getDiagonal(diagonalChecker, occupied).and(
+			getDiagonal(board.activeClr ? bb.K : bb.k, occupied),
+		);
+	}
+	if (inOrthogonalCheck) {
+		checkRays = getOrthogonal(orthogonalChecker, occupied).and(
+			getOrthogonal(board.activeClr ? bb.K : bb.k, occupied),
+		);
+	}
+
+	console.log('done');
 	return {
 		checkCount,
-		validBlackKingSqrs: blackKingMoves,
-		validWhiteKingSqrs: whiteKingMoves,
-		blackMoves,
-		whiteMoves,
-		whitePinned,
-		blackPinned,
-		whitePinMoves,
-		blackPinMoves,
+		checkers,
+		checkRays,
+		validKingSqrs: board.activeClr ? whiteKingMoves : blackKingMoves,
+		pinned: board.activeClr ? whitePinned : blackPinned,
+		pinMoves: board.activeClr ? whitePinMoves : blackPinMoves,
 	};
 }

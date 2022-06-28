@@ -130,8 +130,16 @@ export class Board {
 		this.generateMoves();
 	}
 	generateMoves() {
-		GenerateBitboards(this);
-		this.moves = generatePseudoLegalMoves(this);
+		const mvLegality = GenerateBitboards(this);
+		this.moves = generatePseudoLegalMoves(
+			this,
+			mvLegality.pinned,
+			mvLegality.pinMoves,
+			mvLegality.validKingSqrs,
+			mvLegality.checkCount,
+			mvLegality.checkers,
+			mvLegality.checkRays,
+		);
 	}
 }
 
