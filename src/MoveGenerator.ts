@@ -289,5 +289,6 @@ export function generatePseudoLegalMoves(
 				break;
 		}
 	}
+	console.log('move generation done');
 	return moves;
 }

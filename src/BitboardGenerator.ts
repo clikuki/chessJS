@@ -129,7 +129,7 @@ function getDiagonal(pc: Bitboard, occupied: Bitboard) {
 			soWeFill(occupied.lShift(7).and(noEaFill(pc).not())).not(),
 		),
 	);
-	return diagonal;
+	return diagonal.xor(pc);
 }
 
 function getKnight(pc: Bitboard, occupied: Bitboard) {
@@ -145,32 +145,11 @@ function getKnight(pc: Bitboard, occupied: Bitboard) {
 	return knight;
 }
 
-// function getPawnPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
-// 	occupied = occupied.and(pc.not());
-// 	const shf = clr ? 'urShift' : 'lShift';
-// 	return pc[shf](8).and(occupied.not());
-// }
-
-// function getPawnDblPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
-// 	occupied = occupied.and(pc.not());
-// 	const shf = clr ? 'urShift' : 'lShift';
-// 	const dblPushRank = clr ? new Bitboard(0, 0xff00) : new Bitboard(0xff0000);
-// 	const singlePush = getPawnPushes(pc, occupied, clr);
-// 	return singlePush.and(dblPushRank)[shf](8).and(occupied.not());
-// }
-
-function getPawnAttacks(
-	pc: Bitboard,
-	occupied: Bitboard,
-	clr: 0 | 1,
-	enpassantSq: number | null,
-) {
+function getPawnAttacks(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
 	occupied = occupied.and(pc.not());
-	const enpassant = enpassantSq ? Bitboard.Mask(enpassantSq) : new Bitboard();
-	const attackable = occupied.or(enpassant);
 	const shf = clr ? 'urShift' : 'lShift';
-	let pawn = pc[shf](9).and(attackable);
-	return pawn.or(pc[shf](7).and(attackable));
+	let pawn = pc[shf](9);
+	return pawn.or(pc[shf](7));
 }
 
 function getKing(pc: Bitboard, occupied: Bitboard, enemyAttacks: Bitboard) {
@@ -202,33 +181,19 @@ function getPinned(
 	king: Bitboard,
 	ally: Bitboard,
 	enemy: Bitboard,
-	enemyCheck: Bitboard,
+	enemyToCheck: Bitboard,
 	gen: (pc: Bitboard, occupied: Bitboard) => Bitboard,
 ) {
 	const occupied = ally.or(enemy);
-	const kingAtk = gen(king, occupied);
-	const enemyAtk = gen(enemyCheck, occupied);
-	const pinned = ally.and(kingAtk, enemyAtk);
-	const pinnedMoves = gen(king, occupied.xor(pinned)).and(
-		gen(enemyCheck, occupied.xor(pinned)),
-	);
-	return [pinned, pinnedMoves];
+	const possiblePins = gen(king, occupied).and(ally);
+	const occupiedNoPinned = occupied.xor(possiblePins);
+	const hitPinners = gen(king, occupiedNoPinned).and(enemyToCheck);
+	const pinMoves = gen(hitPinners, occupiedNoPinned)
+		.and(gen(king, occupiedNoPinned))
+		.or(hitPinners);
+	const pinned = pinMoves.and(possiblePins);
+	return [pinned, pinMoves];
 }
-
-// function pinGenWrapper(
-// 	pc: Bitboard,
-// 	pinned: Bitboard,
-// 	pinMoves: Bitboard,
-// 	occupied: Bitboard,
-// 	gen: (...n: any) => Bitboard,
-// 	...extraParams: any[]
-// ) {
-// 	const normalMoves = gen(pc.and(pinned.not()), occupied, ...extraParams);
-// 	const pinnedMoves = gen(pinned.and(pc), occupied, ...extraParams).and(
-// 		pinMoves,
-// 	);
-// 	return normalMoves.or(pinnedMoves);
-// }
 
 export function GenerateBitboards(board: Board) {
 	const bb = board.BB;
@@ -282,7 +247,7 @@ export function GenerateBitboards(board: Board) {
 		getKnight(bb.n, occupiedNoKings),
 	);
 	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
-		getPawnAttacks(bb.p, occupiedNoKings, 0, board.enpassantSq),
+		getPawnAttacks(bb.p, occupiedNoKings, 0),
 	);
 	let whitePseudoLegalAtks = getOrthogonal(bb.R.or(bb.Q), occupiedNoKings);
 	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
@@ -292,7 +257,7 @@ export function GenerateBitboards(board: Board) {
 		getKnight(bb.N, occupiedNoKings),
 	);
 	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
-		getPawnAttacks(bb.P, occupiedNoKings, 1, board.enpassantSq),
+		getPawnAttacks(bb.P, occupiedNoKings, 1),
 	);
 	const [blackKingMoves, whiteKingMoves] = getKingPair(
 		blackKing,
@@ -311,7 +276,6 @@ export function GenerateBitboards(board: Board) {
 		board.activeClr ? bb.K : bb.k,
 		occupiedNoKings,
 		1,
-		board.enpassantSq,
 	).and(board.activeClr ? bb.p : bb.P);
 	const diagonalChecker = getDiagonal(
 		board.activeClr ? bb.K : bb.k,
@@ -348,7 +312,7 @@ export function GenerateBitboards(board: Board) {
 		);
 	}
 
-	console.log('done');
+	console.log('bitboard generation done');
 	return {
 		checkCount,
 		checkers,
