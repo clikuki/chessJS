@@ -1,21 +1,21 @@
 :root {
 	--dark-tile-clr: hsl(38, 69%, 82%);
 	--light-tile-clr: hsl(28, 37%, 55%);
+	--highlight-clr: hsla(90, 100%, 60%, 0.6);
 	--tile-size: 4.5rem;
 }
 body {
 	margin: 0;
 }
-.grid {
+.board {
 	display: grid;
 	width: fit-content;
 	grid-template-columns: repeat(8, var(--tile-size));
 	grid-template-rows: repeat(8, var(--tile-size));
 	user-select: none;
 }
-.tile img {
-	aspect-ratio: 1;
-	width: var(--tile-size);
+.tile {
+	position: relative;
 }
 .tile.light {
 	background-color: var(--light-tile-clr);
@@ -23,15 +23,27 @@ body {
 .tile.dark {
 	background-color: var(--dark-tile-clr);
 }
+.tile.highlight::after {
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background-color: var(--highlight-clr);
+}
+.piece {
+	z-index: 1;
+	aspect-ratio: 1;
+	width: var(--tile-size);
+	position: absolute;
+	pointer-events: none;
+	user-select: none;
+	left: var(--x, 0);
+	top: var(--y, 0);
+}
 .imagePreloading {
 	display: none;
 }
-img {
-	pointer-events: none;
-	user-select: none;
-}
 .dragging {
-	position: absolute;
 	left: calc(var(--x, 0) - (var(--tile-size) / 2));
 	top: calc(var(--y, 0) - (var(--tile-size) / 2));
 }
