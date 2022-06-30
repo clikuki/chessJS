@@ -79,9 +79,12 @@ board.generateMoves();
 
 // Create dom representation
 const grid = document.createElement('div');
+grid.classList.add('board');
 const imgs: (HTMLImageElement | null)[] = [];
 const tiles: HTMLElement[] = [];
-grid.classList.add('board');
+const ghost = document.createElement('img');
+ghost.classList.add('piece', 'ghost', 'hidden');
+grid.appendChild(ghost);
 for (let j = 0; j < 8; j++) {
 	for (let i = 0; i < 8; i++) {
 		const tile = document.createElement('div');
@@ -120,6 +123,9 @@ grid.addEventListener('mousedown', (e) => {
 	setXYOnElement(img, x, y);
 	setDragging(img, true);
 	startSq = sq;
+	ghost.src = img.src;
+	ghost.classList.remove('hidden');
+	setXYOnElement(ghost, ...sqToPos(sq));
 });
 grid.addEventListener('mousemove', (e) => {
 	if (startSq === null) return;
@@ -161,5 +167,6 @@ grid.addEventListener('mouseup', (e) => {
 	const { x: tileX, y: tileY } = getElementTileXY(img);
 	setXYOnElement(img, tileX!, tileY!);
 	setDragging(img, false);
+	ghost.classList.add('hidden');
 	startSq = null;
 });

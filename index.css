@@ -40,10 +40,14 @@ body {
 	left: var(--x, 0);
 	top: var(--y, 0);
 }
-.imagePreloading {
-	display: none;
+.piece.ghost {
+	opacity: 0.6;
 }
 .dragging {
 	left: calc(var(--x, 0) - (var(--tile-size) / 2));
 	top: calc(var(--y, 0) - (var(--tile-size) / 2));
+}
+.hidden,
+.imagePreloading {
+	display: none;
 }
