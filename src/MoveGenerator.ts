@@ -154,7 +154,11 @@ function generateKingMoves(
 			[0, -2],
 			[1, 2],
 		] as const) {
-			if (board.castlingRights.can(pieceClr, side))
+			if (
+				!Bitboard.Mask(sq + offset)
+					.and(validKingSqrs)
+					.isEmpty()
+			)
 				moves.push(
 					new Move(sq, sq + offset, {
 						isCastling: true,
@@ -234,6 +238,7 @@ export function generatePseudoLegalMoves(
 	checkers: Bitboard,
 	checkRays: Bitboard,
 ) {
+	validKingSqrs.easyView();
 	const moves: Move[] = [];
 	for (let sq = 0; sq < 64; sq++) {
 		const piece = board.pieces[sq];

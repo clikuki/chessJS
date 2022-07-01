@@ -86,8 +86,9 @@ const tileSize = tileSizeInRem * fontSize;
 
 // Load up board
 // const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const startFen =
-	'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1';
+// const startFen =
+// 	'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1';
+const startFen = '4k3/4r3/8/8/8/8/8/R3K2R w KQ - 0 1';
 const board = readFen(startFen);
 board.generateMoves();
 

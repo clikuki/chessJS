@@ -1,5 +1,6 @@
 import Bitboard from './Bitboard.js';
 import { Board } from './Board.js';
+import { CastlingRights } from './CastlingRights.js';
 
 const notAFile = new Bitboard(0xfefefefe, 0xfefefefe);
 const notHFile = new Bitboard(0x7f7f7f7f, 0x7f7f7f7f);
@@ -152,8 +153,15 @@ function getPawnAttacks(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
 	return pawn.or(pc[shf](7));
 }
 
-function getKing(pc: Bitboard, occupied: Bitboard, enemyAttacks: Bitboard) {
+function getKing(
+	pc: Bitboard,
+	occupied: Bitboard,
+	enemyAttacks: Bitboard,
+	castlingRights: CastlingRights,
+	clr: 0 | 1,
+) {
 	occupied = occupied.and(pc.not());
+	// normal moves
 	let king = pc.urShift(9);
 	king = king.or(pc.urShift(8));
 	king = king.or(pc.urShift(7));
@@ -162,6 +170,28 @@ function getKing(pc: Bitboard, occupied: Bitboard, enemyAttacks: Bitboard) {
 	king = king.or(pc.lShift(7));
 	king = king.or(pc.lShift(8));
 	king = king.or(pc.lShift(9));
+	// castling
+	if (enemyAttacks.and(pc).isEmpty()) {
+		const occupiedAndAtk = occupied.or(enemyAttacks);
+		if (castlingRights.can(clr, 0)) {
+			king = king.or(
+				pc
+					.urShift(2)
+					.and(
+						westFill(occupiedAndAtk.and(eastFill(pc).not())).not(),
+					),
+			);
+		}
+		if (castlingRights.can(clr, 1)) {
+			king = king.or(
+				pc
+					.lShift(2)
+					.and(
+						eastFill(occupiedAndAtk.and(westFill(pc).not())).not(),
+					),
+			);
+		}
+	}
 	return king.and(enemyAttacks.not());
 }
 
@@ -171,9 +201,22 @@ function getKingPair(
 	blackAttack: Bitboard,
 	whiteAttack: Bitboard,
 	occupied: Bitboard,
+	castlingRights: CastlingRights,
 ) {
-	const bkMoves = getKing(blackKing, occupied, whiteAttack);
-	const wkMoves = getKing(whiteKing, occupied, blackAttack);
+	const bkMoves = getKing(
+		blackKing,
+		occupied,
+		whiteAttack,
+		castlingRights,
+		0,
+	);
+	const wkMoves = getKing(
+		whiteKing,
+		occupied,
+		blackAttack,
+		castlingRights,
+		1,
+	);
 	return [bkMoves.and(wkMoves.not()), wkMoves.and(bkMoves.not())];
 }
 
@@ -277,6 +320,7 @@ export function GenerateBitboards(board: Board) {
 		blackPseudoLegalAtks,
 		whitePseudoLegalAtks,
 		occupiedNoKings,
+		board.castlingRights,
 	);
 
 	let checkCount = 0;
