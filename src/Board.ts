@@ -48,7 +48,7 @@ export class Board {
 		const movedPiece = this.pieces[move.startSq];
 		if (!movedPiece) return;
 		const captureSq =
-			move.options.isEnpassant && this.enpassantSq
+			move.options?.isEnpassant && this.enpassantSq
 				? this.enpassantSq + (this.activeClr ? 8 : -8)
 				: move.targetSq;
 		const capturedPiece = this.pieces[captureSq];
@@ -57,7 +57,7 @@ export class Board {
 		this.pieces[move.startSq] = null;
 		this.pieces[captureSq] = null;
 		this.pieces[move.targetSq] = movedPiece;
-		if (move.options.isCastling) {
+		if (move.options?.isCastling) {
 			const side = move.options.castlingSide!;
 			const oldRookPosition = move.targetSq + (side ? 1 : -2);
 			const newRookPosition = move.targetSq + (side ? -1 : 1);
@@ -75,7 +75,7 @@ export class Board {
 			this.BB[capturedPiece] = this.BB[capturedPiece].xor(
 				Bitboard.Mask(captureSq),
 			);
-		if (move.options.isCastling) {
+		if (move.options?.isCastling) {
 			const side = move.options.castlingSide!;
 			const oldRookPosition = move.targetSq + (side ? 1 : -2);
 			const newRookPosition = move.targetSq + (side ? -1 : 1);
@@ -105,7 +105,7 @@ export class Board {
 				}
 			});
 
-		if (move.options.isDoublePush) {
+		if (move.options?.isDoublePush) {
 			this.enpassantSq = move.targetSq + (this.activeClr ? 8 : -8);
 		} else this.enpassantSq = null;
 		if (capturedPiece || movedPiece === 'P' || movedPiece === 'p')

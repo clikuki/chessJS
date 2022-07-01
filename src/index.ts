@@ -178,7 +178,7 @@ grid.addEventListener('mouseup', (e) => {
 		imgs[sq]?.remove();
 		imgs[sq] = img;
 		setTileXYOnElement(img, ...sqToPos(sq));
-		if (move.options.isCastling) {
+		if (move.options?.isCastling) {
 			const side = move.options.castlingSide!;
 			const oldRookPosition = move.targetSq + (side ? 1 : -2);
 			const newRookPosition = move.targetSq + (side ? -1 : 1);

@@ -2,21 +2,15 @@ import Bitboard from './Bitboard.js';
 import { Board } from './Board.js';
 import { getPieceCharClr } from './utility.js';
 
-interface MoveOptions {
-	isEnpassant?: boolean;
-	isDoublePush?: boolean;
-	isCastling?: boolean;
-	castlingSide?: 0 | 1;
-}
-export class Move {
+export interface Move {
 	startSq: number;
 	targetSq: number;
-	options: MoveOptions;
-	constructor(startSq: number, targetSq: number, options: MoveOptions = {}) {
-		this.startSq = startSq;
-		this.targetSq = targetSq;
-		this.options = options;
-	}
+	options?: {
+		isEnpassant?: boolean;
+		isDoublePush?: boolean;
+		isCastling?: boolean;
+		castlingSide?: 0 | 1;
+	};
 }
 
 const offsets = [-8, 1, 8, -1, /**/ -9, -7, 9, 7];
@@ -79,7 +73,10 @@ function generateSlidingMoves(
 				(!kingInCheck ||
 					!Bitboard.Mask(targetSq).and(checkStopper).isEmpty())
 			)
-				moves.push(new Move(sq, targetSq));
+				moves.push({
+					startSq: sq,
+					targetSq,
+				});
 			if (capturedPiece) break;
 		}
 	}
@@ -118,7 +115,10 @@ function generateKnightMoves(
 				!kingInCheck ||
 				!Bitboard.Mask(targetSq).and(checkStopper).isEmpty()
 			)
-				moves.push(new Move(sq, targetSq));
+				moves.push({
+					startSq: sq,
+					targetSq,
+				});
 			if (capturedPiece) continue;
 		}
 	}
@@ -144,7 +144,10 @@ function generateKingMoves(
 			(!capturedPiece || getPieceCharClr(capturedPiece) !== pieceClr) &&
 			!Bitboard.Mask(targetSq).and(validKingSqrs).isEmpty()
 		) {
-			moves.push(new Move(sq, targetSq));
+			moves.push({
+				startSq: sq,
+				targetSq,
+			});
 		}
 	}
 
@@ -159,12 +162,14 @@ function generateKingMoves(
 					.and(validKingSqrs)
 					.isEmpty()
 			)
-				moves.push(
-					new Move(sq, sq + offset, {
+				moves.push({
+					startSq: sq,
+					targetSq: sq + offset,
+					options: {
 						isCastling: true,
 						castlingSide: side,
-					}),
-				);
+					},
+				});
 		}
 	}
 
@@ -202,9 +207,13 @@ function generatePawnMoves(
 				(!kingInCheck ||
 					!Bitboard.Mask(targetSq).and(checkStopper).isEmpty())
 			)
-				moves.push(
-					new Move(sq, targetSq, { isDoublePush: Boolean(i - 1) }),
-				);
+				moves.push({
+					startSq: sq,
+					targetSq,
+					options: {
+						isDoublePush: Boolean(i - 1),
+					},
+				});
 		}
 	}
 
@@ -220,11 +229,13 @@ function generatePawnMoves(
 			(!kingInCheck ||
 				!Bitboard.Mask(targetSq).and(checkStopper).isEmpty())
 		) {
-			moves.push(
-				new Move(sq, targetSq, {
+			moves.push({
+				startSq: sq,
+				targetSq,
+				options: {
 					isEnpassant: targetSq === board.enpassantSq,
-				}),
-			);
+				},
+			});
 		}
 	}
 	return moves;
