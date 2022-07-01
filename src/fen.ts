@@ -17,11 +17,13 @@ export function readFen(fen: string) {
 	board.halfMoves = +halfMoves;
 	board.fullMoves = +fullMoves;
 
-	for (const char of castling) {
-		const lowercase = char.toLowerCase();
-		const side = lowercase === 'q' ? 0 : 1;
-		const clr = char === lowercase ? 0 : 1;
-		board.castlingRights.set(clr, side, true);
+	if (castling !== '-') {
+		for (const char of castling) {
+			const lowercase = char.toLowerCase();
+			const side = lowercase === 'q' ? 0 : 1;
+			const clr = char === lowercase ? 0 : 1;
+			board.castlingRights.set(clr, side, true);
+		}
 	}
 
 	let x = 0;

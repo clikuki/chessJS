@@ -162,14 +162,14 @@ function getKing(
 ) {
 	occupied = occupied.and(pc.not());
 	// normal moves
-	let king = pc.urShift(9);
+	let king = pc.urShift(9).and(notHFile);
 	king = king.or(pc.urShift(8));
-	king = king.or(pc.urShift(7));
-	king = king.or(pc.urShift(1));
-	king = king.or(pc.lShift(1));
-	king = king.or(pc.lShift(7));
+	king = king.or(pc.urShift(7).and(notAFile));
+	king = king.or(pc.urShift(1).and(notHFile));
+	king = king.or(pc.lShift(1).and(notAFile));
+	king = king.or(pc.lShift(7).and(notHFile));
 	king = king.or(pc.lShift(8));
-	king = king.or(pc.lShift(9));
+	king = king.or(pc.lShift(9).and(notAFile));
 	// castling
 	if (enemyAttacks.and(pc).isEmpty()) {
 		const occupiedAndAtk = occupied.or(enemyAttacks);
@@ -368,6 +368,33 @@ export function GenerateBitboards(board: Board) {
 		);
 	}
 
+	let canEnpassant = Boolean(board.enpassantSq);
+	if (canEnpassant) {
+		const possibleEPCapturers = (board.activeClr ? bb.P : bb.p).and(
+			Bitboard.Mask(board.enpassantSq! + (board.activeClr ? 9 : -9)).or(
+				Bitboard.Mask(board.enpassantSq! + (board.activeClr ? 7 : -7)),
+			),
+		);
+		if (possibleEPCapturers.popCnt() === 1) {
+			const occupiedNoEP = occupied.xor(
+				possibleEPCapturers.or(
+					Bitboard.Mask(
+						board.enpassantSq! + (board.activeClr ? 8 : -8),
+					),
+				),
+			);
+			const orthogonalChecker = getOrthogonal(
+				board.activeClr ? bb.K : bb.k,
+				occupiedNoEP,
+			).and(
+				(board.activeClr ? bb.r : bb.R).or(
+					board.activeClr ? bb.q : bb.Q,
+				),
+			);
+			if (orthogonalChecker.popCnt()) canEnpassant = false;
+		}
+	}
+
 	console.log('bitboard generation done');
 	return {
 		checkCount,
@@ -376,5 +403,6 @@ export function GenerateBitboards(board: Board) {
 		validKingSqrs: board.activeClr ? whiteKingMoves : blackKingMoves,
 		pinned: board.activeClr ? whitePinned : blackPinned,
 		pinMoves: board.activeClr ? whitePinMoves : blackPinMoves,
+		canEnpassant,
 	};
 }

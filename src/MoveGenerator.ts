@@ -174,6 +174,7 @@ function generateKingMoves(
 function generatePawnMoves(
 	board: Board,
 	sq: number,
+	canEnpassant: boolean,
 	isPinned: boolean,
 	pinMoves: Bitboard,
 	checkers: Bitboard,
@@ -212,7 +213,7 @@ function generatePawnMoves(
 		const targetSq = sq + offset;
 		const capturedPiece = board.pieces[targetSq];
 		if (
-			(targetSq === board.enpassantSq ||
+			((canEnpassant && targetSq === board.enpassantSq) ||
 				(capturedPiece &&
 					getPieceCharClr(capturedPiece) !== pieceClr)) &&
 			(!isPinned || !Bitboard.Mask(targetSq).and(pinMoves).isEmpty()) &&
@@ -237,8 +238,8 @@ export function generatePseudoLegalMoves(
 	checkerCount: number,
 	checkers: Bitboard,
 	checkRays: Bitboard,
+	canEnpassant: boolean,
 ) {
-	validKingSqrs.easyView();
 	const moves: Move[] = [];
 	for (let sq = 0; sq < 64; sq++) {
 		const piece = board.pieces[sq];
@@ -285,6 +286,7 @@ export function generatePseudoLegalMoves(
 					...generatePawnMoves(
 						board,
 						sq,
+						canEnpassant,
 						isPinned,
 						pinMoves,
 						checkers,

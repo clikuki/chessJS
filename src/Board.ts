@@ -125,6 +125,7 @@ export class Board {
 			mvLegality.checkCount,
 			mvLegality.checkers,
 			mvLegality.checkRays,
+			mvLegality.canEnpassant,
 		);
 	}
 }
