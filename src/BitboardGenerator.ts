@@ -239,9 +239,15 @@ export function GenerateBitboards(board: Board) {
 	const whitePinned = whiteDiagonalPins.or(whiteOrthogonalPins);
 	const whitePinMoves = whiteDiagonalPinMoves.or(whiteOrthogonalPinMoves);
 
-	let blackPseudoLegalAtks = getOrthogonal(bb.r.or(bb.q), occupiedNoKings);
+	let blackPseudoLegalAtks = getOrthogonal(bb.q, occupiedNoKings);
 	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
-		getDiagonal(bb.b.or(bb.q), occupiedNoKings),
+		getDiagonal(bb.q, occupiedNoKings),
+	);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getOrthogonal(bb.r, occupiedNoKings),
+	);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getDiagonal(bb.b, occupiedNoKings),
 	);
 	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
 		getKnight(bb.n, occupiedNoKings),
@@ -249,9 +255,15 @@ export function GenerateBitboards(board: Board) {
 	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
 		getPawnAttacks(bb.p, occupiedNoKings, 0),
 	);
-	let whitePseudoLegalAtks = getOrthogonal(bb.R.or(bb.Q), occupiedNoKings);
+	let whitePseudoLegalAtks = getOrthogonal(bb.Q, occupiedNoKings);
 	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
-		getDiagonal(bb.B.or(bb.Q), occupiedNoKings),
+		getDiagonal(bb.Q, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getOrthogonal(bb.R, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getDiagonal(bb.B, occupiedNoKings),
 	);
 	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
 		getKnight(bb.N, occupiedNoKings),
