@@ -1,8 +1,14 @@
 :root {
-	--dark-tile-clr: hsl(38, 69%, 82%);
-	--light-tile-clr: hsl(28, 37%, 55%);
-	--highlight-clr: hsla(90, 100%, 60%, 0.6);
+	--dark-tile-clr: hsl(28, 37%, 55%);
+	--light-tile-clr: hsl(38, 69%, 82%);
+	--last-move-clr: hsla(90, 100%, 60%, 0.6);
+	--legal-move-clr: hsla(90, 55%, 52%, 0.756);
 	--tile-size: 4.5rem;
+}
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
 }
 body {
 	margin: 0;
@@ -23,12 +29,38 @@ body {
 .tile.dark {
 	background-color: var(--dark-tile-clr);
 }
-.tile.highlight::after {
+.tile.last-move::after {
 	content: '';
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	background-color: var(--highlight-clr);
+	background-color: var(--last-move-clr);
+}
+.tile.legal-move::after {
+	content: '';
+	position: absolute;
+	width: 30%;
+	height: 30%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	border-radius: 50%;
+	background-color: var(--legal-move-clr);
+}
+.tile.legal-capture::after {
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	border: 5px solid var(--legal-move-clr);
+}
+.tile.legal-move.hovered::after,
+.tile.legal-capture.hovered::after {
+	background-color: var(--legal-move-clr);
+	width: 100%;
+	height: 100%;
+	border-radius: 0;
+	border: none;
 }
 .piece {
 	z-index: 1;

@@ -1,5 +1,6 @@
 import { readFen } from './fen.js';
 import { ImageSrcContainer, imgSrcs } from './loadImages.js';
+import { Move } from './MoveGenerator.js';
 import { getPieceCharClr } from './utility.js';
 
 function getMouseEventXY(e: MouseEvent) {
@@ -56,11 +57,22 @@ function canTakeSq(startSq: number, targetSq: number) {
 	return !captured || getPieceCharClr(captured) !== getPieceCharClr(moved);
 }
 
-function updateTileHighlights(from: number, to: number) {
-	const className = 'highlight';
+function updateLastMoveTiles(from: number, to: number) {
+	const className = 'last-move';
 	tiles.forEach((tile, i) => {
 		if ([from, to].includes(i)) tile.classList.add(className);
 		else tile.classList.remove(className);
+	});
+}
+
+function updateLegalMoves(moves: Move[]) {
+	const legalMoveSqrs = moves.map((mv) => mv.targetSq);
+	const moveClassName = 'legal-move';
+	const captureClassName = 'legal-capture';
+	tiles.forEach((tile, i) => {
+		if (legalMoveSqrs.includes(i))
+			tile.classList.add(imgs[i] ? captureClassName : moveClassName);
+		else tile.classList.remove(moveClassName, captureClassName);
 	});
 }
 
@@ -73,7 +85,8 @@ const fontSize = parseFloat(computedStyles.fontSize);
 const tileSize = tileSizeInRem * fontSize;
 
 // Load up board
-const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+// const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const startFen = 'rnbqkbnr/ppp1pppp/8/3p3/4P2/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1';
 const board = readFen(startFen);
 board.generateMoves();
 
@@ -88,7 +101,7 @@ grid.appendChild(ghost);
 for (let j = 0; j < 8; j++) {
 	for (let i = 0; i < 8; i++) {
 		const tile = document.createElement('div');
-		tile.classList.add('tile', (i + j) % 2 ? 'light' : 'dark');
+		tile.classList.add('tile', (i + j) % 2 ? 'dark' : 'light');
 		const index = i + j * 8;
 
 		if (board.pieces[index]) {
@@ -126,12 +139,26 @@ grid.addEventListener('mousedown', (e) => {
 	ghost.src = img.src;
 	ghost.classList.remove('hidden');
 	setXYOnElement(ghost, ...sqToPos(sq));
+	updateLegalMoves(board.moves.filter((mv) => mv.startSq === sq));
 });
+let prevHovered: HTMLElement | null = null;
 grid.addEventListener('mousemove', (e) => {
 	if (startSq === null) return;
 	const { x, y } = getMouseEventXY(e);
+	const sq = getSq(x, y);
 	const img = imgs[startSq]!;
 	setXYOnElement(img, x, y);
+	const hoveredTile = tiles[sq];
+	if (hoveredTile === prevHovered) return;
+	prevHovered?.classList.remove('hovered');
+	prevHovered = null;
+	if (
+		hoveredTile.classList.contains('legal-capture') ||
+		hoveredTile.classList.contains('legal-move')
+	) {
+		hoveredTile.classList.add('hovered');
+		prevHovered = hoveredTile;
+	}
 });
 grid.addEventListener('mouseup', (e) => {
 	if (startSq === null) return;
@@ -161,12 +188,13 @@ grid.addEventListener('mouseup', (e) => {
 			setTileXYOnElement(rookImg, x, y);
 		}
 		board.makeMove(move);
-		updateTileHighlights(move.startSq, move.targetSq);
+		updateLastMoveTiles(move.startSq, move.targetSq);
 	}
 
 	const { x: tileX, y: tileY } = getElementTileXY(img);
 	setXYOnElement(img, tileX!, tileY!);
 	setDragging(img, false);
+	updateLegalMoves([]);
 	ghost.classList.add('hidden');
 	startSq = null;
 });
