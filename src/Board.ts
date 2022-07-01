@@ -57,7 +57,9 @@ export class Board {
 		this.pieces[move.startSq] = null;
 		this.pieces[captureSq] = null;
 		this.pieces[move.targetSq] = movedPiece;
-		if (move.options?.isCastling) {
+		if (move.options?.isPromotion && move.options.promoteTo) {
+			this.pieces[move.targetSq] = move.options.promoteTo;
+		} else if (move.options?.isCastling) {
 			const side = move.options.castlingSide!;
 			const oldRookPosition = move.targetSq + (side ? 1 : -2);
 			const newRookPosition = move.targetSq + (side ? -1 : 1);
@@ -68,21 +70,30 @@ export class Board {
 		}
 
 		// Update bitboards
-		this.BB[movedPiece] = this.BB[movedPiece]
-			.xor(Bitboard.Mask(move.startSq))
-			.or(Bitboard.Mask(move.targetSq));
+		this.BB[movedPiece] = this.BB[movedPiece].xor(
+			Bitboard.Mask(move.startSq),
+		);
 		if (capturedPiece)
 			this.BB[capturedPiece] = this.BB[capturedPiece].xor(
 				Bitboard.Mask(captureSq),
 			);
-		if (move.options?.isCastling) {
-			const side = move.options.castlingSide!;
-			const oldRookPosition = move.targetSq + (side ? 1 : -2);
-			const newRookPosition = move.targetSq + (side ? -1 : 1);
-			const rookChar = this.activeClr ? 'R' : ('r' as PieceChars);
-			this.BB[rookChar] = this.BB[rookChar]
-				.xor(Bitboard.Mask(oldRookPosition))
-				.or(Bitboard.Mask(newRookPosition));
+		if (move.options?.isPromotion && move.options.promoteTo) {
+			this.BB[move.options.promoteTo] = this.BB[
+				move.options.promoteTo
+			].or(Bitboard.Mask(move.targetSq));
+		} else {
+			this.BB[movedPiece] = this.BB[movedPiece].or(
+				Bitboard.Mask(move.targetSq),
+			);
+			if (move.options?.isCastling) {
+				const side = move.options.castlingSide!;
+				const oldRookPosition = move.targetSq + (side ? 1 : -2);
+				const newRookPosition = move.targetSq + (side ? -1 : 1);
+				const rookChar = this.activeClr ? 'R' : ('r' as PieceChars);
+				this.BB[rookChar] = this.BB[rookChar]
+					.xor(Bitboard.Mask(oldRookPosition))
+					.or(Bitboard.Mask(newRookPosition));
+			}
 		}
 
 		// Update castling rights

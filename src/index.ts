@@ -169,6 +169,32 @@ grid.addEventListener('mouseup', (e) => {
 	const sq = getSq(x, y);
 	const move = findMove(startSq, sq);
 	if (move && canTakeSq(startSq, sq)) {
+		if (move.options?.isPromotion) {
+			const msg = 'Enter the name of the piece you wish to promote to.';
+			const validInputs = {
+				queen: ['q', 'Q'],
+				rook: ['r', 'R'],
+				bishop: ['b', 'B'],
+				knight: ['n', 'N'],
+			} as const;
+			while (true) {
+				const userInput = prompt(msg)?.toLowerCase() as
+					| keyof typeof validInputs
+					| null;
+				if (userInput && validInputs[userInput]) {
+					const pieceChar = validInputs[userInput][board.activeClr];
+					move.options.promoteTo = pieceChar;
+					img.src =
+						imgSrcs[
+							`${pieceChar.toLowerCase()}${
+								board.activeClr ? 'l' : 'd'
+							}` as keyof ImageSrcContainer
+						];
+					break;
+				}
+			}
+		}
+
 		imgs[startSq] = null;
 		if (board.enpassantSq === sq) {
 			const captureSq = sq + (board.activeClr ? 8 : -8);

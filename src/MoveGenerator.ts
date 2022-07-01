@@ -1,5 +1,5 @@
 import Bitboard from './Bitboard.js';
-import { Board } from './Board.js';
+import { Board, PieceChars } from './Board.js';
 import { getPieceCharClr } from './utility.js';
 
 export interface Move {
@@ -10,6 +10,8 @@ export interface Move {
 		isDoublePush?: boolean;
 		isCastling?: boolean;
 		castlingSide?: 0 | 1;
+		isPromotion?: boolean;
+		promoteTo?: PieceChars;
 	};
 }
 
@@ -212,6 +214,7 @@ function generatePawnMoves(
 					targetSq,
 					options: {
 						isDoublePush: Boolean(i - 1),
+						isPromotion: [0, 7].includes(Math.floor(targetSq / 8)),
 					},
 				});
 		}
