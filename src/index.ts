@@ -76,6 +76,15 @@ function updateLegalMoves(moves: Move[]) {
 	});
 }
 
+function resetBoardAfterDragging(img: HTMLElement) {
+	const { x: tileX, y: tileY } = getElementTileXY(img);
+	setXYOnElement(img, tileX!, tileY!);
+	setDragging(img, false);
+	updateLegalMoves([]);
+	ghost.classList.add('hidden');
+	startSq = null;
+}
+
 // Get tile size
 const computedStyles = getComputedStyle(document.documentElement);
 const tileSizeInRem = parseFloat(
@@ -170,29 +179,37 @@ grid.addEventListener('mouseup', (e) => {
 	const move = findMove(startSq, sq);
 	if (move && canTakeSq(startSq, sq)) {
 		if (move.options?.isPromotion) {
-			const msg = 'Enter the name of the piece you wish to promote to.';
-			const validInputs = {
-				queen: ['q', 'Q'],
-				rook: ['r', 'R'],
-				bishop: ['b', 'B'],
-				knight: ['n', 'N'],
-			} as const;
-			while (true) {
-				const userInput = prompt(msg)?.toLowerCase() as
-					| keyof typeof validInputs
-					| null;
-				if (userInput && validInputs[userInput]) {
-					const pieceChar = validInputs[userInput][board.activeClr];
-					move.options.promoteTo = pieceChar;
-					img.src =
-						imgSrcs[
-							`${pieceChar.toLowerCase()}${
-								board.activeClr ? 'l' : 'd'
-							}` as keyof ImageSrcContainer
-						];
-					break;
+			if (!move.options.promoteTo) {
+				const msg =
+					'Enter the name of the piece you wish to promote to.';
+				const validInputs = {
+					queen: ['q', 'Q'],
+					rook: ['r', 'R'],
+					bishop: ['b', 'B'],
+					knight: ['n', 'N'],
+				} as const;
+				while (true) {
+					const userInput = prompt(msg)?.toLowerCase() as
+						| keyof typeof validInputs
+						| undefined;
+					if (userInput === undefined) {
+						resetBoardAfterDragging(img);
+						return;
+					}
+					if (validInputs[userInput]) {
+						const pieceChar =
+							validInputs[userInput][board.activeClr];
+						move.options.promoteTo = pieceChar;
+						break;
+					}
 				}
 			}
+			img.src =
+				imgSrcs[
+					`${move.options.promoteTo.toLowerCase()}${
+						board.activeClr ? 'l' : 'd'
+					}` as keyof ImageSrcContainer
+				];
 		}
 
 		imgs[startSq] = null;
@@ -220,10 +237,5 @@ grid.addEventListener('mouseup', (e) => {
 		updateLastMoveTiles(move.startSq, move.targetSq);
 	}
 
-	const { x: tileX, y: tileY } = getElementTileXY(img);
-	setXYOnElement(img, tileX!, tileY!);
-	setDragging(img, false);
-	updateLegalMoves([]);
-	ghost.classList.add('hidden');
-	startSq = null;
+	resetBoardAfterDragging(img);
 });
