@@ -216,6 +216,7 @@ grid.addEventListener('mouseup', (e) => {
 			setTileXYOnElement(rookImg, x, y);
 		}
 		board.makeMove(move);
+		board.generateMoves();
 		updateLastMoveTiles(move.startSq, move.targetSq);
 	}
 

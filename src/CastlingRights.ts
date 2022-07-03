@@ -4,6 +4,9 @@ export class CastlingRights {
 	can(color: 0 | 1, side: 0 | 1) {
 		return this.rights[color * 2 + side];
 	}
+	canColor(color: 0 | 1) {
+		return [this.rights[color * 2], this.rights[color * 2 + 1]];
+	}
 	set(color: 0 | 1, side: 0 | 1, right: boolean) {
 		this.rights[color * 2 + side] = right;
 	}
