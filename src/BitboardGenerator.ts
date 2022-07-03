@@ -146,6 +146,20 @@ function getKnight(pc: Bitboard, occupied: Bitboard) {
 	return knight;
 }
 
+function getPawnPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
+	occupied = occupied.and(pc.not());
+	const shf = clr ? 'urShift' : 'lShift';
+	return pc[shf](8).and(occupied.not());
+}
+
+function getPawnDblPushes(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
+	occupied = occupied.and(pc.not());
+	const shf = clr ? 'urShift' : 'lShift';
+	const dblPushRank = clr ? new Bitboard(0, 0xff00) : new Bitboard(0xff0000);
+	const singlePush = getPawnPushes(pc, occupied, clr);
+	return singlePush.and(dblPushRank)[shf](8).and(occupied.not());
+}
+
 function getPawnAttacks(pc: Bitboard, occupied: Bitboard, clr: 0 | 1) {
 	occupied = occupied.and(pc.not());
 	const shf = clr ? 'urShift' : 'lShift';
@@ -238,8 +252,24 @@ function getPinned(
 	return [pinned, pinMoves];
 }
 
+function pinGenWrapper(
+	pc: Bitboard,
+	pinned: Bitboard,
+	pinMoves: Bitboard,
+	occupied: Bitboard,
+	gen: (...n: any) => Bitboard,
+	...extraParams: any[]
+) {
+	const normalMoves = gen(pc.and(pinned.not()), occupied, ...extraParams);
+	const pinnedMoves = gen(pinned.and(pc), occupied, ...extraParams).and(
+		pinMoves,
+	);
+	return normalMoves.or(pinnedMoves);
+}
+
 export function GenerateBitboards(board: Board) {
 	const bb = board.BB;
+	const clr = board.activeClr;
 	const whiteKing = bb.K;
 	const blackKing = bb.k;
 	const allWhite = bb.Q.or(whiteKing, bb.R, bb.B, bb.N, bb.P);
@@ -324,23 +354,20 @@ export function GenerateBitboards(board: Board) {
 	);
 
 	let checkCount = 0;
-	const knightChecker = getKnight(
-		board.activeClr ? bb.K : bb.k,
-		occupied,
-	).and(board.activeClr ? bb.n : bb.N);
+	const knightChecker = getKnight(clr ? bb.K : bb.k, occupied).and(
+		clr ? bb.n : bb.N,
+	);
 	const pawnChecker = getPawnAttacks(
-		board.activeClr ? bb.K : bb.k,
+		clr ? bb.K : bb.k,
 		occupiedNoKings,
 		1,
-	).and(board.activeClr ? bb.p : bb.P);
-	const diagonalChecker = getDiagonal(
-		board.activeClr ? bb.K : bb.k,
-		occupied,
-	).and((board.activeClr ? bb.b : bb.B).or(board.activeClr ? bb.q : bb.Q));
-	const orthogonalChecker = getOrthogonal(
-		board.activeClr ? bb.K : bb.k,
-		occupied,
-	).and((board.activeClr ? bb.r : bb.R).or(board.activeClr ? bb.q : bb.Q));
+	).and(clr ? bb.p : bb.P);
+	const diagonalChecker = getDiagonal(clr ? bb.K : bb.k, occupied).and(
+		(clr ? bb.b : bb.B).or(clr ? bb.q : bb.Q),
+	);
+	const orthogonalChecker = getOrthogonal(clr ? bb.K : bb.k, occupied).and(
+		(clr ? bb.r : bb.R).or(clr ? bb.q : bb.Q),
+	);
 	let checkers = knightChecker.or(
 		pawnChecker,
 		diagonalChecker,
@@ -359,38 +386,32 @@ export function GenerateBitboards(board: Board) {
 	let checkRays = new Bitboard();
 	if (inDiagonalCheck) {
 		checkRays = getDiagonal(diagonalChecker, occupied).and(
-			getDiagonal(board.activeClr ? bb.K : bb.k, occupied),
+			getDiagonal(clr ? bb.K : bb.k, occupied),
 		);
 	}
 	if (inOrthogonalCheck) {
 		checkRays = getOrthogonal(orthogonalChecker, occupied).and(
-			getOrthogonal(board.activeClr ? bb.K : bb.k, occupied),
+			getOrthogonal(clr ? bb.K : bb.k, occupied),
 		);
 	}
 
 	let canEnpassant = Boolean(board.enpassantSq);
 	if (canEnpassant) {
-		const possibleEPCapturers = (board.activeClr ? bb.P : bb.p).and(
-			Bitboard.Mask(board.enpassantSq! + (board.activeClr ? 9 : -9)).or(
-				Bitboard.Mask(board.enpassantSq! + (board.activeClr ? 7 : -7)),
+		const possibleEPCapturers = (clr ? bb.P : bb.p).and(
+			Bitboard.Mask(board.enpassantSq! + (clr ? 9 : -9)).or(
+				Bitboard.Mask(board.enpassantSq! + (clr ? 7 : -7)),
 			),
 		);
 		if (possibleEPCapturers.popCnt() === 1) {
 			const occupiedNoEP = occupied.xor(
 				possibleEPCapturers.or(
-					Bitboard.Mask(
-						board.enpassantSq! + (board.activeClr ? 8 : -8),
-					),
+					Bitboard.Mask(board.enpassantSq! + (clr ? 8 : -8)),
 				),
 			);
 			const orthogonalChecker = getOrthogonal(
-				board.activeClr ? bb.K : bb.k,
+				clr ? bb.K : bb.k,
 				occupiedNoEP,
-			).and(
-				(board.activeClr ? bb.r : bb.R).or(
-					board.activeClr ? bb.q : bb.Q,
-				),
-			);
+			).and((clr ? bb.r : bb.R).or(clr ? bb.q : bb.Q));
 			if (orthogonalChecker.popCnt()) canEnpassant = false;
 		}
 	}
@@ -400,9 +421,217 @@ export function GenerateBitboards(board: Board) {
 		checkCount,
 		checkers,
 		checkRays,
-		validKingSqrs: board.activeClr ? whiteKingMoves : blackKingMoves,
-		pinned: board.activeClr ? whitePinned : blackPinned,
-		pinMoves: board.activeClr ? whitePinMoves : blackPinMoves,
+		validKingSqrs: clr ? whiteKingMoves : blackKingMoves,
+		pinned: clr ? whitePinned : blackPinned,
+		pinMoves: clr ? whitePinMoves : blackPinMoves,
 		canEnpassant,
 	};
+}
+
+export function getMobility(board: Board) {
+	const bb = board.BB;
+	const whiteKing = bb.K;
+	const blackKing = bb.k;
+	const allWhite = bb.Q.or(whiteKing, bb.R, bb.B, bb.N, bb.P);
+	const allBlack = bb.q.or(blackKing, bb.r, bb.b, bb.n, bb.p);
+	const allWhiteNoKing = allWhite.xor(whiteKing);
+	const allBlackNoKing = allBlack.xor(blackKing);
+	const occupied = allBlack.or(allWhite);
+	const occupiedNoKings = allBlackNoKing.or(allWhiteNoKing);
+
+	const [whiteDiagonalPins, whiteDiagonalPinMoves] = getPinned(
+		whiteKing,
+		allWhiteNoKing,
+		allBlackNoKing,
+		bb.b.or(bb.q),
+		getDiagonal,
+	);
+	const [whiteOrthogonalPins, whiteOrthogonalPinMoves] = getPinned(
+		whiteKing,
+		allWhiteNoKing,
+		allBlackNoKing,
+		bb.r.or(bb.q),
+		getOrthogonal,
+	);
+	const [blackDiagonalPins, blackDiagonalPinMoves] = getPinned(
+		blackKing,
+		allBlackNoKing,
+		allWhiteNoKing,
+		bb.B.or(bb.Q),
+		getDiagonal,
+	);
+	const [blackOrthogonalPins, blackOrthogonalPinMoves] = getPinned(
+		blackKing,
+		allBlackNoKing,
+		allWhiteNoKing,
+		bb.R.or(bb.Q),
+		getOrthogonal,
+	);
+	const blackPinned = blackDiagonalPins.or(blackOrthogonalPins);
+	const blackPinMoves = blackDiagonalPinMoves.or(blackOrthogonalPinMoves);
+	const whitePinned = whiteDiagonalPins.or(whiteOrthogonalPins);
+	const whitePinMoves = whiteDiagonalPinMoves.or(whiteOrthogonalPinMoves);
+
+	let blackPseudoLegalAtks = getOrthogonal(bb.q, occupiedNoKings);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getDiagonal(bb.q, occupiedNoKings),
+	);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getOrthogonal(bb.r, occupiedNoKings),
+	);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getDiagonal(bb.b, occupiedNoKings),
+	);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getKnight(bb.n, occupiedNoKings),
+	);
+	blackPseudoLegalAtks = blackPseudoLegalAtks.or(
+		getPawnAttacks(bb.p, occupiedNoKings, 0),
+	);
+	let whitePseudoLegalAtks = getOrthogonal(bb.Q, occupiedNoKings);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getDiagonal(bb.Q, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getOrthogonal(bb.R, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getDiagonal(bb.B, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getKnight(bb.N, occupiedNoKings),
+	);
+	whitePseudoLegalAtks = whitePseudoLegalAtks.or(
+		getPawnAttacks(bb.P, occupiedNoKings, 1),
+	);
+	const [blackKingMoves, whiteKingMoves] = getKingPair(
+		blackKing,
+		whiteKing,
+		blackPseudoLegalAtks,
+		whitePseudoLegalAtks,
+		occupiedNoKings,
+		board.castlingRights,
+	);
+
+	let blackMoves = pinGenWrapper(
+		bb.q,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getOrthogonal,
+	);
+	blackMoves = pinGenWrapper(
+		bb.q,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getDiagonal,
+	);
+	blackMoves = pinGenWrapper(
+		bb.r,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getOrthogonal,
+	);
+	blackMoves = pinGenWrapper(
+		bb.b,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getDiagonal,
+	);
+	blackMoves = pinGenWrapper(
+		bb.n,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getKnight,
+	);
+	blackMoves = pinGenWrapper(
+		bb.p,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getPawnPushes,
+		0,
+	);
+	blackMoves = pinGenWrapper(
+		bb.p,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getPawnDblPushes,
+		0,
+	);
+	blackMoves = pinGenWrapper(
+		bb.p,
+		blackPinned,
+		blackPinMoves,
+		occupied,
+		getPawnAttacks,
+		0,
+	);
+	blackMoves = blackMoves.or(blackKingMoves);
+	let whiteMoves = pinGenWrapper(
+		bb.Q,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getOrthogonal,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.Q,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getDiagonal,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.R,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getOrthogonal,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.B,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getDiagonal,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.N,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getKnight,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.P,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getPawnPushes,
+		0,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.P,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getPawnDblPushes,
+		0,
+	);
+	whiteMoves = pinGenWrapper(
+		bb.P,
+		whitePinned,
+		whitePinMoves,
+		occupied,
+		getPawnAttacks,
+		0,
+	);
+	whiteMoves = whiteMoves.or(whiteKingMoves);
+	return [blackMoves.popCnt(), whiteMoves.popCnt()];
 }
