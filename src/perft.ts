@@ -17,6 +17,7 @@ function pBase(board: Board, depth: number) {
 export function perft(board: Board, depth: number) {
 	console.log(`Searching to depth of ${depth}`);
 	const moves = board.generateMoves();
+	const returnVal: { [key: string]: number } = {};
 	let totalNodes = 0;
 	if (depth === 1) totalNodes = moves.length;
 	else if (depth <= 0) totalNodes = 1;
@@ -25,13 +26,14 @@ export function perft(board: Board, depth: number) {
 			board.makeMove(move);
 			const nodes = pBase(board, depth - 1);
 			totalNodes += nodes;
-			console.log(
-				`${sqToAlgebraic(move.startSq)}${sqToAlgebraic(
-					move.targetSq,
-				)}: ${nodes}`,
-			);
+			const key = `${sqToAlgebraic(move.startSq)}${sqToAlgebraic(
+				move.targetSq,
+			)}`;
+			returnVal[key] = nodes;
+			console.log(`${key}: ${nodes}`);
 			board.unmakeMove();
 		}
 	}
 	console.log('Nodes searched:', totalNodes);
+	return returnVal;
 }
