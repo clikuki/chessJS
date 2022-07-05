@@ -221,24 +221,28 @@ function generatePawnMoves(
 	}
 
 	for (const offsetIndex of captureOffsetIndices) {
-		const offset = offsets[offsetIndex];
-		const targetSq = sq + offset;
-		const capturedPiece = board.pieces[targetSq];
-		if (
-			((canEnpassant && targetSq === board.enpassantSq) ||
-				(capturedPiece &&
-					getPieceCharClr(capturedPiece) !== pieceClr)) &&
-			(!isPinned || !Bitboard.Mask(targetSq).and(pinMoves).isEmpty()) &&
-			(!kingInCheck ||
-				!Bitboard.Mask(targetSq).and(checkStopper).isEmpty())
-		) {
-			moves.push({
-				startSq: sq,
-				targetSq,
-				options: {
-					isEnpassant: targetSq === board.enpassantSq,
-				},
-			});
+		const captureEdgeDist = sqDist[offsetIndex];
+		if (captureEdgeDist) {
+			const offset = offsets[offsetIndex];
+			const targetSq = sq + offset;
+			const capturedPiece = board.pieces[targetSq];
+			if (
+				((canEnpassant && targetSq === board.enpassantSq) ||
+					(capturedPiece &&
+						getPieceCharClr(capturedPiece) !== pieceClr)) &&
+				(!isPinned ||
+					!Bitboard.Mask(targetSq).and(pinMoves).isEmpty()) &&
+				(!kingInCheck ||
+					!Bitboard.Mask(targetSq).and(checkStopper).isEmpty())
+			) {
+				moves.push({
+					startSq: sq,
+					targetSq,
+					options: {
+						isEnpassant: targetSq === board.enpassantSq,
+					},
+				});
+			}
 		}
 	}
 	return moves;
