@@ -5,9 +5,8 @@ export function getPieceCharClr(pieceChar: PieceChars) {
 	return pieceChar === pieceChar.toLowerCase() ? 0 : 1;
 }
 
-const filesChars = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
+const filesChars = 'abcdefgh';
+const rankChars = '87654321';
 export function sqToAlgebraic(sq: number) {
-	return (
-		filesChars[sq % 8] + Math.abs(Math.floor(sq / 8) + 1 - 9).toString(10)
-	);
+	return filesChars[sq % 8] + rankChars[Math.floor(sq / 8)];
 }

@@ -12,20 +12,6 @@ export function readFen(fen: string) {
 		fullMoves,
 	] = fen.split(' ');
 
-	board.activeClr = activeClr === 'b' ? 0 : 1;
-	board.enpassantSq = +enpassantSq;
-	board.halfMoves = +halfMoves;
-	board.fullMoves = +fullMoves;
-
-	if (castling !== '-') {
-		for (const char of castling) {
-			const lowercase = char.toLowerCase();
-			const side = lowercase === 'q' ? 0 : 1;
-			const clr = char === lowercase ? 0 : 1;
-			board.castlingRights.set(clr, side, true);
-		}
-	}
-
 	let x = 0;
 	let y = 0;
 	for (const char of placementData) {
@@ -43,6 +29,23 @@ export function readFen(fen: string) {
 			++x;
 		}
 	}
+
+	board.activeClr = activeClr === 'b' ? 0 : 1;
+	board.enpassantSq = +enpassantSq;
+	board.halfMoves = +halfMoves;
+	board.fullMoves = +fullMoves;
+
+	if (castling !== '-') {
+		for (const char of castling) {
+			const lowercase = char.toLowerCase();
+			const side = lowercase === 'q' ? 0 : 1;
+			const clr = char === lowercase ? 0 : 1;
+			if (board.pieces[(side ? 7 : 0) + (clr ? 7 : 0) * 8]) {
+				board.castlingRights.set(clr, side, true);
+			}
+		}
+	}
+
 	return board;
 }
 // export function getFen(board: Board) {}
