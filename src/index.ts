@@ -1,3 +1,4 @@
+import { ai } from './ai.js';
 import { readFen } from './fen.js';
 import { ImageSrcContainer, imgSrcs } from './loadImages.js';
 import { Move } from './MoveGenerator.js';
@@ -85,6 +86,40 @@ function resetBoardAfterDragging(img: HTMLElement) {
 	startSq = null;
 }
 
+function updateGrid(move: Move) {
+	const img = imgs[move.startSq]!;
+	if (move.options?.isPromotion && move.options.promoteTo) {
+		img.src =
+			imgSrcs[
+				`${move.options.promoteTo.toLowerCase()}${
+					board.activeClr ? 'l' : 'd'
+				}` as keyof ImageSrcContainer
+			];
+	}
+	imgs[move.startSq] = null;
+	if (board.enpassantSq === move.targetSq) {
+		const captureSq = move.targetSq + (board.activeClr ? 8 : -8);
+		imgs[captureSq]?.remove();
+		imgs[captureSq] = null;
+	}
+	imgs[move.targetSq]?.remove();
+	imgs[move.targetSq] = img;
+	const [targetX, targetY] = sqToPos(move.targetSq);
+	setTileXYOnElement(img, targetX, targetY);
+	setXYOnElement(img, targetX, targetY);
+	if (move.options?.isCastling) {
+		const side = move.options.castlingSide!;
+		const oldRookPosition = move.targetSq + (side ? 1 : -2);
+		const newRookPosition = move.targetSq + (side ? -1 : 1);
+		const rookImg = imgs[oldRookPosition]!;
+		imgs[oldRookPosition] = null;
+		imgs[newRookPosition] = rookImg;
+		const [x, y] = sqToPos(newRookPosition);
+		setXYOnElement(rookImg, x, y);
+		setTileXYOnElement(rookImg, x, y);
+	}
+}
+
 // Get tile size
 const computedStyles = getComputedStyle(document.documentElement);
 const tileSizeInRem = parseFloat(
@@ -94,10 +129,12 @@ const fontSize = parseFloat(computedStyles.fontSize);
 const tileSize = tileSizeInRem * fontSize;
 
 // Load up board
-// const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 // const startFen =
 // 	'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1';
-const startFen = '8/8/8/8/KQ2p2k/8/3P4/8 w - - 0 1';
+// const startFen = '8/8/8/8/KQ2p2k/8/3P4/8 w - - 0 1';
+// const startFen = '2Q5/3Q4/8/8/K42k/8/8/8 w - - 0 1';
+// const startFen = '6R1/8/8/8/6b1/8/8/6R1 w - - 0 1';
 const board = readFen(startFen);
 board.generateMoves();
 
@@ -178,64 +215,42 @@ grid.addEventListener('mouseup', (e) => {
 	const sq = getSq(x, y);
 	const move = findMove(startSq, sq);
 	if (move && canTakeSq(startSq, sq)) {
-		if (move.options?.isPromotion) {
-			if (!move.options.promoteTo) {
-				const msg =
-					'Enter the name of the piece you wish to promote to.';
-				const validInputs = {
-					queen: ['q', 'Q'],
-					rook: ['r', 'R'],
-					bishop: ['b', 'B'],
-					knight: ['n', 'N'],
-				} as const;
-				while (true) {
-					const userInput = prompt(msg)?.toLowerCase() as
-						| keyof typeof validInputs
-						| undefined;
-					if (userInput === undefined) {
-						resetBoardAfterDragging(img);
-						return;
-					}
-					if (validInputs[userInput]) {
-						const pieceChar =
-							validInputs[userInput][board.activeClr];
-						move.options.promoteTo = pieceChar;
-						break;
-					}
+		if (move.options?.isPromotion && !move.options.promoteTo) {
+			const msg = 'Enter the name of the piece you wish to promote to.';
+			const validInputs = {
+				queen: ['q', 'Q'],
+				rook: ['r', 'R'],
+				bishop: ['b', 'B'],
+				knight: ['n', 'N'],
+			} as const;
+			while (true) {
+				const userInput = prompt(msg)?.toLowerCase() as
+					| keyof typeof validInputs
+					| undefined;
+				if (userInput === undefined) {
+					resetBoardAfterDragging(img);
+					return;
+				}
+				if (validInputs[userInput]) {
+					console.log(board.activeClr);
+					const pieceChar = validInputs[userInput][board.activeClr];
+					move.options.promoteTo = pieceChar;
+					break;
 				}
 			}
-			img.src =
-				imgSrcs[
-					`${move.options.promoteTo.toLowerCase()}${
-						board.activeClr ? 'l' : 'd'
-					}` as keyof ImageSrcContainer
-				];
 		}
-
-		imgs[startSq] = null;
-		if (board.enpassantSq === sq) {
-			const captureSq = sq + (board.activeClr ? 8 : -8);
-			imgs[captureSq]?.remove();
-			imgs[captureSq] = null;
-		}
-		imgs[sq]?.remove();
-		imgs[sq] = img;
-		setTileXYOnElement(img, ...sqToPos(sq));
-		if (move.options?.isCastling) {
-			const side = move.options.castlingSide!;
-			const oldRookPosition = move.targetSq + (side ? 1 : -2);
-			const newRookPosition = move.targetSq + (side ? -1 : 1);
-			const rookImg = imgs[oldRookPosition]!;
-			imgs[oldRookPosition] = null;
-			imgs[newRookPosition] = rookImg;
-			const [x, y] = sqToPos(newRookPosition);
-			setXYOnElement(rookImg, x, y);
-			setTileXYOnElement(rookImg, x, y);
-		}
+		updateGrid(move);
 		board.makeMove(move);
-		board.generateMoves();
+
+		ai(board).then((aiMove) => {
+			if (!aiMove) return;
+			updateGrid(aiMove);
+			board.makeMove(aiMove);
+			board.generateMoves();
+			updateLastMoveTiles(aiMove.startSq, aiMove.targetSq);
+		});
+
 		updateLastMoveTiles(move.startSq, move.targetSq);
 	}
-
 	resetBoardAfterDragging(img);
 });

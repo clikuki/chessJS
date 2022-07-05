@@ -416,7 +416,6 @@ export function GenerateBitboards(board: Board) {
 		}
 	}
 
-	console.log('bitboard generation done');
 	return {
 		checkCount,
 		checkers,

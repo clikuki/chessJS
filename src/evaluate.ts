@@ -1,5 +1,5 @@
-import { getMobility } from './BitboardGenerator';
-import { Board } from './Board';
+import { getMobility } from './BitboardGenerator.js';
+import { Board } from './Board.js';
 
 const wts = {
 	// Pieces
